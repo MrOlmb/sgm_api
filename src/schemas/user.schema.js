@@ -239,6 +239,6 @@ const validerFichiersAdhesion = (files) => {
 module.exports = {
   adhesionSchema,
   formCodeSchema,
-  statusUpdateSchema,
-  validerFichiersAdhesion
+  statusUpdateSchema
+  // validerFichiersAdhesion removed - file validation now handled by frontend
 };

@@ -10,7 +10,7 @@ const healthRoutes = require('./routes/health');
 const authRoutes = require('./routes/auth'); // Routes auth locale (remplace Clerk)
 const secretaireRoutes = require('./routes/secretaire'); // Routes tableau de bord secrétaire
 const membreRoutes = require('./routes/membre'); // Routes membre
-const registrationRoutes = require('./routes/registration');
+// Registration routes removed - using local auth system instead
 const adhesionRoutes = require('./routes/adhesion');
 const texteOfficielRoutes = require('./routes/texte-officiel'); // Routes textes officiels
 const signatureRoutes = require('./routes/signature'); // Routes signatures Cloudinary
@@ -65,7 +65,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes); // Routes authentification locale
 app.use('/api/secretaire', secretaireRoutes); // Routes tableau de bord secrétaire
 app.use('/api/membre', membreRoutes); // Routes membre
-app.use('/api/register', registrationRoutes);
+// app.use('/api/register', registrationRoutes); // REMOVED - deprecated Clerk-based registration
 app.use('/api/adhesion', adhesionRoutes);
 app.use('/api/textes-officiels', texteOfficielRoutes); // Routes textes officiels
 app.use('/api/signature', signatureRoutes); // Routes signatures Cloudinary
@@ -113,8 +113,8 @@ app.get('/api', (req, res) => {
       secretaire_creer_identifiants: '/api/secretaire/creer-identifiants (POST) - Créer identifiants',
       adhesion_soumettre: '/api/adhesion/soumettre (POST) - Soumettre demande adhésion',
       adhesion_statut: '/api/adhesion/statut (GET) - Statut demande adhésion',
-      register: '/api/register (POST) - Complete member registration',
-      register_status: '/api/register/status (GET) - Get registration status'
+      // register: '/api/register - DEPRECATED (was Clerk-based)',
+      // register_status: '/api/register/status - DEPRECATED (was Clerk-based)'
     },
     documentation: 'See README.md for full API documentation'
   });

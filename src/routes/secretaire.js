@@ -1,6 +1,6 @@
 const express = require('express');
 const controleurSecretaire = require('../controllers/secretaire.controller');
-const { authentifierJWT, verifierRole } = require('../middleware/auth-local');
+const { authentifierJWT, verifierRole, verifierAccesFormulaire } = require('../middleware/auth-local');
 const { generalLimiter } = require('../middleware/security');
 
 const router = express.Router();
@@ -502,7 +502,7 @@ router.get('/formulaires',
  *     summary: Obtenir les détails d'un formulaire d'adhésion spécifique
  *     description: |
  *       Permet au secrétaire de consulter tous les détails d'un formulaire
- *       d'adhésion avant de prendre une décision d'approbation ou de rejet.
+ *       d'adhésion, ou à un utilisateur de consulter son propre formulaire.
  *       Inclut l'historique des actions et les statistiques contextuelles.
  *     tags: [Forms]
  *     security:
@@ -633,11 +633,11 @@ router.get('/formulaires',
  *       401:
  *         description: Non autorisé (authentification requise)
  *       403:
- *         description: Accès refusé (rôle secrétaire requis)
+ *         description: Accès refusé (seuls les secrétaires ou l'utilisateur concerné peuvent accéder)
  */
 router.get('/formulaire/:id_utilisateur',
   authentifierJWT,
-  verifierRoleSecretaire,
+  verifierAccesFormulaire,
   generalLimiter,
   controleurSecretaire.obtenirFormulaireUtilisateur
 );
@@ -680,6 +680,20 @@ router.get('/formulaire/:id_utilisateur',
  *                   **REQUIS** : URL Cloudinary du PDF final avec signatures 
  *                   généré par le frontend au moment de l'approbation.
  *                 example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/formulaire_final_approuve_user_3.pdf"
+ *               carte_recto_url:
+ *                 type: string
+ *                 format: uri
+ *                 description: |
+ *                   **OPTIONNEL** : URL Cloudinary de l'image de la face avant de la carte de membre.
+ *                   Si fourni, carte_verso_url est également requis.
+ *                 example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_recto_user_3.jpg"
+ *               carte_verso_url:
+ *                 type: string
+ *                 format: uri
+ *                 description: |
+ *                   **OPTIONNEL** : URL Cloudinary de l'image de la face arrière de la carte de membre.
+ *                   Si fourni, carte_recto_url est également requis.
+ *                 example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_verso_user_3.jpg"
  *               commentaire:
  *                 type: string
  *                 maxLength: 500
@@ -688,6 +702,8 @@ router.get('/formulaire/:id_utilisateur',
  *           example:
  *             id_utilisateur: 3
  *             url_formulaire_final: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/formulaire_final_approuve_user_3.pdf"
+ *             carte_recto_url: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_recto_user_3.jpg"
+ *             carte_verso_url: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_verso_user_3.jpg"
  *             commentaire: "Dossier complet et validé"
  *     responses:
  *       200:
@@ -721,12 +737,36 @@ router.get('/formulaire/:id_utilisateur',
  *                     - "🏷️ Code de formulaire généré"
  *                     - "✍️ Signature du président ajoutée"
  *                     - "🎫 Carte d'adhésion émise"
+ *                     - "🎴 Cartes de membre (recto/verso) ajoutées"
+ *                 cartes_membre:
+ *                   type: object
+ *                   nullable: true
+ *                   description: Informations sur les cartes de membre si fournies
+ *                   properties:
+ *                     recto_url:
+ *                       type: string
+ *                       format: uri
+ *                       example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_recto_user_3.jpg"
+ *                     verso_url:
+ *                       type: string
+ *                       format: uri
+ *                       example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_verso_user_3.jpg"
+ *                     generee_le:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-08-29T15:30:00Z"
+ *                     generee_par:
+ *                       type: integer
+ *                       description: ID du secrétaire qui a généré les cartes
+ *                       example: 2
  *       400:
  *         description: |
  *           Données invalides ou manquantes. Erreurs courantes :
  *           - URL du PDF final manquante
  *           - Formulaire déjà approuvé
  *           - URL Cloudinary invalide
+ *           - Cartes de membre incomplètes (recto ou verso manquant)
+ *           - Format d'URL de carte invalide
  *         content:
  *           application/json:
  *             schema:

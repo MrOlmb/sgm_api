@@ -105,6 +105,21 @@ const creerIdentifiantsSchema = z.object({
     .regex(/^\+?[0-9\s\-()]{8,}$/, 'Format de téléphone invalide')
 });
 
+// Schéma pour la génération de cartes de membre (secrétaire)
+const genererCartesMembreSchema = z.object({
+  id_utilisateur: z.number()
+    .int('L\'ID utilisateur doit être un entier')
+    .positive('L\'ID utilisateur doit être positif'),
+  
+  carte_recto_url: z.string()
+    .url('URL de la carte recto invalide')
+    .min(1, 'L\'URL de la carte recto est requise'),
+  
+  carte_verso_url: z.string()
+    .url('URL de la carte verso invalide')  
+    .min(1, 'L\'URL de la carte verso est requise')
+});
+
 module.exports = {
   connexionSchema,
   changerMotPasseSchema,
@@ -112,5 +127,6 @@ module.exports = {
   recuperationMotPasseSchema,
   reinitialiserMotPasseSchema,
   creerNouveauMembreSchema,
-  creerIdentifiantsSchema // Garder pour compatibilité
+  creerIdentifiantsSchema, // Garder pour compatibilité
+  genererCartesMembreSchema
 };

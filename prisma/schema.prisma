@@ -47,6 +47,12 @@ model Utilisateur {
   code_formulaire        String?   @unique
   url_qr_code            String?
   carte_emise_le         DateTime?
+  
+  // Cartes de membre (images stockées sur Cloudinary)
+  carte_recto_url        String?   // URL Cloudinary de la face avant de la carte de membre
+  carte_verso_url        String?   // URL Cloudinary de la face arrière de la carte de membre
+  carte_generee_le       DateTime? // Date de génération des cartes
+  carte_generee_par      Int?      // ID du secrétaire qui a généré les cartes
   raison_rejet           String?   // Raison du rejet si statut = REJETE
   rejete_le              DateTime? // Date de rejet
   rejete_par             Int?      // ID du secrétaire qui a rejeté

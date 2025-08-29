@@ -1,5 +1,5 @@
 const express = require('express');
-const multer = require('multer');
+// multer no longer needed - file uploads handled by frontend
 const adhesionController = require('../controllers/adhesion.controller');
 const { uploadLimiter } = require('../middleware/security');
 

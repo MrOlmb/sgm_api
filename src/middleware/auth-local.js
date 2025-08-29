@@ -200,9 +200,49 @@ const verifierFormulairesoumis = (req, res, next) => {
   next();
 };
 
+/**
+ * Middleware pour vérifier si l'utilisateur peut accéder au formulaire
+ * Permet aux secrétaires d'accéder à tous les formulaires
+ * Permet aux utilisateurs d'accéder uniquement à leur propre formulaire
+ */
+const verifierAccesFormulaire = (req, res, next) => {
+  if (!req.user) {
+    const authError = new Error('Authentification requise');
+    authError.code = 'AUTH_REQUISE';
+    authError.status = 401;
+    const context = {
+      operation: 'form_access_verification',
+      user_id: 'anonymous'
+    };
+    return ErrorHandler.formatAuthError(authError, res, context);
+  }
+
+  const { id_utilisateur } = req.params;
+  
+  // Les secrétaires et présidents peuvent accéder à tous les formulaires
+  if (['SECRETAIRE_GENERALE', 'PRESIDENT'].includes(req.user.role)) {
+    return next();
+  }
+
+  // Les membres peuvent seulement accéder à leur propre formulaire
+  if (req.user.role === 'MEMBRE' && parseInt(id_utilisateur) === req.user.id) {
+    return next();
+  }
+
+  // Accès refusé dans tous les autres cas
+  const context = {
+    operation: 'form_access_verification',
+    user_id: req.user.id,
+    requested_user_id: id_utilisateur,
+    user_role: req.user.role
+  };
+  return ErrorHandler.formatAuthorizationError(new Error('Accès refusé à ce formulaire'), res, context);
+};
+
 module.exports = {
   authentifierJWT,
   verifierRole,
   verifierChangementMotPasse,
-  verifierFormulairesoumis
+  verifierFormulairesoumis,
+  verifierAccesFormulaire
 };

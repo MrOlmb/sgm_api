@@ -15,8 +15,8 @@ const server = app.listen(PORT, HOST, () => {
     port: PORT,
     host: HOST,
     database: process.env.DATABASE_URL ? 'configured' : 'missing',
-    clerk: process.env.CLERK_SECRET_KEY ? 'configured' : 'missing',
-    cloudinary: process.env.CLOUDINARY_CLOUD_NAME ? 'configured' : 'missing',
+    // clerk: removed - using local authentication
+    // cloudinary: removed - handled by frontend
   });
 });
 

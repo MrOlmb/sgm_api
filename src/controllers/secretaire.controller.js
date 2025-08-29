@@ -3,9 +3,9 @@ const logger = require('../config/logger');
 const serviceAuth = require('../services/auth.service');
 const emailService = require('../services/email.service');
 const ErrorHandler = require('../utils/errorHandler');
-const pdfGeneratorService = require('../services/pdf-generator.service');
-const cloudinaryService = require('../services/cloudinary.service');
-const { creerIdentifiantsSchema, creerNouveauMembreSchema } = require('../schemas/auth.schema');
+// PDF generation is now handled by the frontend
+// Cloudinary operations are now handled by the frontend
+const { creerIdentifiantsSchema, creerNouveauMembreSchema, genererCartesMembreSchema } = require('../schemas/auth.schema');
 
 class ControleurSecretaire {
 
@@ -804,11 +804,11 @@ class ControleurSecretaire {
   }
 
   /**
-   * Approuver un formulaire d'adhésion (avec signature du président automatique)
+   * Approuver un formulaire d'adhésion (avec signature du président automatique et cartes de membre)
    */
   async approuverFormulaire(req, res) {
     try {
-      const { id_utilisateur, commentaire, url_formulaire_final } = req.body;
+      const { id_utilisateur, commentaire, url_formulaire_final, carte_recto_url, carte_verso_url } = req.body;
       const idSecretaire = req.utilisateur.id;
 
       if (!id_utilisateur) {
@@ -824,6 +824,32 @@ class ControleurSecretaire {
           code: 'URL_FORMULAIRE_MANQUANT',
           message: 'Le PDF final avec signatures doit être généré par le frontend avant approbation'
         });
+      }
+
+      // Validate membership card URLs if provided
+      if (carte_recto_url || carte_verso_url) {
+        if (!carte_recto_url || !carte_verso_url) {
+          return res.status(400).json({
+            erreur: 'Les deux URLs de carte de membre (recto et verso) sont requises si des cartes sont fournies',
+            code: 'CARTES_INCOMPLETES',
+            message: 'Fournissez à la fois carte_recto_url et carte_verso_url'
+          });
+        }
+
+        // Validate card URLs with schema
+        try {
+          genererCartesMembreSchema.parse({
+            id_utilisateur: id_utilisateur,
+            carte_recto_url: carte_recto_url,
+            carte_verso_url: carte_verso_url
+          });
+        } catch (validationError) {
+          return res.status(400).json({
+            erreur: 'Données des cartes de membre invalides',
+            code: 'VALIDATION_CARTES_ECHOUEE',
+            details: validationError.errors || []
+          });
+        }
       }
 
       // Vérifier que l'utilisateur existe et a soumis un formulaire
@@ -878,16 +904,27 @@ class ControleurSecretaire {
         select: { id: true, url_signature: true }
       });
 
+      // Prepare update data
+      const updateData = {
+        statut: 'APPROUVE',
+        numero_adhesion: numeroAdhesion, // Attribution du numéro lors de l'approbation
+        code_formulaire: codeFormulaire,
+        carte_emise_le: new Date(), // Date d'émission de la carte
+        modifie_le: new Date()
+      };
+
+      // Add membership card URLs if provided
+      if (carte_recto_url && carte_verso_url) {
+        updateData.carte_recto_url = carte_recto_url;
+        updateData.carte_verso_url = carte_verso_url;
+        updateData.carte_generee_le = new Date();
+        updateData.carte_generee_par = idSecretaire;
+      }
+
       // Approuver et ajouter signature + carte d'adhésion
       const utilisateurMisAJour = await prisma.utilisateur.update({
         where: { id: id_utilisateur },
-        data: {
-          statut: 'APPROUVE',
-          numero_adhesion: numeroAdhesion, // Attribution du numéro lors de l'approbation
-          code_formulaire: codeFormulaire,
-          carte_emise_le: new Date(), // Date d'émission de la carte
-          modifie_le: new Date()
-        }
+        data: updateData
       });
 
       // Journal d'audit
@@ -902,7 +939,10 @@ class ControleurSecretaire {
             commentaire: commentaire || null,
             signature_president_id: signaturePresident?.id || null,
             traite_par: idSecretaire,
-            carte_emise: true
+            carte_emise: true,
+            cartes_membre_ajoutees: !!(carte_recto_url && carte_verso_url),
+            carte_recto_url: carte_recto_url || null,
+            carte_verso_url: carte_verso_url || null
           },
           adresse_ip: req.ip,
           agent_utilisateur: req.get('User-Agent')
@@ -973,8 +1013,15 @@ class ControleurSecretaire {
           '🏷️ Code de formulaire généré',
           '✍️ Signature du président ajoutée',
           '🎫 Carte d\'adhésion émise',
+          ...(carte_recto_url && carte_verso_url ? ['🎴 Cartes de membre (recto/verso) ajoutées'] : []),
           ...(notificationEmail.success ? ['📧 Email de confirmation envoyé'] : [])
         ],
+        cartes_membre: carte_recto_url && carte_verso_url ? {
+          recto_url: carte_recto_url,
+          verso_url: carte_verso_url,
+          generee_le: new Date(),
+          generee_par: idSecretaire
+        } : null,
         signature_president: signaturePresident ? {
           appliquee: true,
           url: signaturePresident.url_signature
