@@ -80,25 +80,6 @@ class AdhesionController {
       // Note: Les photos ET le PDF du formulaire sont maintenant des URLs Cloudinary
       // La validation des URLs se fait dans le schema Zod (selfie_photo_url, signature_url, url_image_formulaire)
 
-      // Vérifier les doublons numéro de carte consulaire (si fourni)
-      if (donneesValidees.numero_carte_consulaire) {
-        const verificationDoublon = await prisma.utilisateur.findFirst({
-          where: {
-            numero_carte_consulaire: donneesValidees.numero_carte_consulaire
-          }
-        });
-
-        if (verificationDoublon) {
-          return res.status(409).json({
-            error: 'Un membre avec ce numéro de carte consulaire existe déjà',
-            code: 'MEMBRE_EXISTE_DEJA',
-            champ: 'numero_carte_consulaire'
-          });
-        }
-      }
-
-      // Note: Le numéro d'adhésion sera généré lors de l'approbation par le secrétaire
-      
       // Vérifier si l'utilisateur existe déjà par nom d'utilisateur (prioritaire) ou téléphone
       // IMPORTANT: Normaliser le téléphone pour la recherche (même logique que Zod transform)
       const telephoneNormalise = donneesValidees.telephone.replace(/\s+/g, '');
@@ -113,6 +94,28 @@ class AdhesionController {
           ]
         }
       });
+
+      // Vérifier les doublons numéro de carte consulaire (si fourni)
+      // Note: Cette vérification exclut l'utilisateur actuel pour permettre les resoumissions
+      if (donneesValidees.numero_carte_consulaire) {
+        const verificationDoublon = await prisma.utilisateur.findFirst({
+          where: {
+            numero_carte_consulaire: donneesValidees.numero_carte_consulaire,
+            // Exclure l'utilisateur actuel s'il existe (pour permettre les resoumissions)
+            ...(utilisateurExistant && { id: { not: utilisateurExistant.id } })
+          }
+        });
+
+        if (verificationDoublon) {
+          return res.status(409).json({
+            error: 'Un membre avec ce numéro de carte consulaire existe déjà',
+            code: 'MEMBRE_EXISTE_DEJA',
+            champ: 'numero_carte_consulaire'
+          });
+        }
+      }
+
+      // Note: Le numéro d'adhésion sera généré lors de l'approbation par le secrétaire
 
       if (utilisateurExistant) {
         logger.info(`DEBUG - Utilisateur trouvé: ID=${utilisateurExistant.id}, statut=${utilisateurExistant.statut}, a_soumis_formulaire=${utilisateurExistant.a_soumis_formulaire}, tel_db="${utilisateurExistant.telephone}"`);
