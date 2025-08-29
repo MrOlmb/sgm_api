@@ -91,6 +91,9 @@ router.get('/tableau-bord',
  *                 membre:
  *                   type: object
  *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
  *                     nom_complet:
  *                       type: string
  *                       example: "Jean Claude Mbongo"
@@ -100,6 +103,13 @@ router.get('/tableau-bord',
  *                     mot_passe_temporaire:
  *                       type: string
  *                       example: "Km9fR2pQ"
+ *                     a_paye:
+ *                       type: boolean
+ *                       example: true
+ *                     telephone:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "+241066123456"
  *                 instructions:
  *                   type: array
  *                   items:

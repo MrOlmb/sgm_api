@@ -73,20 +73,26 @@ const options = {
         User: {
           type: 'object',
           properties: {
-            id: { type: 'integer', example: 1 },
-            prenoms: { type: 'string', example: 'Jean claude' },
-            nom: { type: 'string', example: 'MBONGO' },
-            email: { type: 'string', format: 'email', example: 'jean.mbongo@example.com' },
-            telephone: { type: 'string', example: '+241066123456' },
-            nom_utilisateur: { type: 'string', example: 'jeanclau.mbongo' },
-            role: { type: 'string', enum: ['MEMBRE', 'SECRETAIRE_GENERALE', 'PRESIDENT'] },
-            statut: { type: 'string', enum: ['EN_ATTENTE', 'APPROUVE', 'REJETE'] },
-            numero_carte_consulaire: { type: 'string', example: 'CC123456', description: 'Numéro de carte consulaire (optionnel)' },
-            selfie_photo_url: { type: 'string', example: 'https://res.cloudinary.com/example/image/upload/v123456789/selfie.jpg', description: 'URL Cloudinary de la photo selfie' },
-            signature_url: { type: 'string', example: 'https://res.cloudinary.com/example/image/upload/v123456789/signature.jpg', description: 'URL Cloudinary de la signature' },
-            commentaire: { type: 'string', example: 'Commentaire du membre', maxLength: 100 },
-            a_soumis_formulaire: { type: 'boolean', example: true },
-            a_change_mot_passe_temporaire: { type: 'boolean', example: false, description: 'True si a déjà changé le mot de passe temporaire' }
+            utilisateur: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer', example: 1 },
+                nom_utilisateur: { type: 'string', example: 'jeanclau.mbongo' },
+                prenoms: { type: 'string', example: 'Jean claude' },
+                nom: { type: 'string', example: 'MBONGO' },
+                nom_complet: { type: 'string', example: 'Jean claude MBONGO' },
+                email: { type: 'string', format: 'email', nullable: true, example: 'jean.mbongo@example.com' },
+                telephone: { type: 'string', example: '+241066123456' },
+                role: { type: 'string', enum: ['MEMBRE', 'SECRETAIRE_GENERALE', 'PRESIDENT'], example: 'MEMBRE' },
+                statut: { type: 'string', enum: ['EN_ATTENTE', 'APPROUVE', 'REJETE'], example: 'APPROUVE' },
+                doit_changer_mot_passe: { type: 'boolean', example: false },
+                a_paye: { type: 'boolean', example: true },
+                a_soumis_formulaire: { type: 'boolean', example: true },
+                numero_adhesion: { type: 'string', nullable: true, example: 'N°001/AGCO/M/2025' },
+                code_formulaire: { type: 'string', nullable: true, example: 'SGM-2025-001' },
+                derniere_connexion: { type: 'string', format: 'date-time', nullable: true }
+              }
+            }
           }
         },
         LoginRequest: {
@@ -105,9 +111,14 @@ const options = {
             utilisateur: {
               type: 'object',
               properties: {
+                id: { type: 'integer', example: 1 },
                 nom_utilisateur: { type: 'string', example: 'president.sgm' },
-                role: { type: 'string', example: 'PRESIDENT' },
-                doit_changer_mot_passe: { type: 'boolean', example: true }
+                nom_complet: { type: 'string', example: 'Marie Claire SECRETAIRE' },
+                role: { type: 'string', enum: ['MEMBRE', 'SECRETAIRE_GENERALE', 'PRESIDENT'], example: 'PRESIDENT' },
+                doit_changer_mot_passe: { type: 'boolean', example: false },
+                a_soumis_formulaire: { type: 'boolean', example: true },
+                statut: { type: 'string', enum: ['EN_ATTENTE', 'APPROUVE', 'REJETE'], example: 'APPROUVE' },
+                raison_rejet: { type: 'string', nullable: true, example: null }
               }
             }
           }

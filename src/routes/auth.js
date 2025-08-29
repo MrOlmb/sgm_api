@@ -122,6 +122,14 @@ router.post('/change-temporary-password', authentifierJWT, authController.change
  *     responses:
  *       200:
  *         description: Mot de passe changé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Mot de passe changé avec succès"
  *       400:
  *         description: Ancien mot de passe incorrect
  */
