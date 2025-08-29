@@ -8,9 +8,36 @@ const { adhesionSchema, validerFichiersAdhesion } = require('../schemas/user.sch
 
 // Fonction utilitaire pour convertir DD-MM-YYYY en Date
 function convertirDateFrancaise(dateStr) {
-  if (!dateStr) return null;
-  const [jour, mois, annee] = dateStr.split('-');
-  return new Date(annee, mois - 1, jour); // mois - 1 car Date() utilise 0-11
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) {
+    logger.warn(`Format de date invalide: "${dateStr}". Attendu: DD-MM-YYYY`);
+    return null;
+  }
+  
+  const [jour, mois, annee] = parts.map(part => part.trim());
+  if (!jour || !mois || !annee) {
+    logger.warn(`Composants de date manquants dans: "${dateStr}"`);
+    return null;
+  }
+  
+  // Validation basique des valeurs
+  const jourNum = parseInt(jour, 10);
+  const moisNum = parseInt(mois, 10);
+  const anneeNum = parseInt(annee, 10);
+  
+  if (isNaN(jourNum) || isNaN(moisNum) || isNaN(anneeNum)) {
+    logger.warn(`Composants de date non numériques dans: "${dateStr}"`);
+    return null;
+  }
+  
+  if (jourNum < 1 || jourNum > 31 || moisNum < 1 || moisNum > 12) {
+    logger.warn(`Valeurs de date invalides dans: "${dateStr}"`);
+    return null;
+  }
+  
+  return new Date(anneeNum, moisNum - 1, jourNum); // mois - 1 car Date() utilise 0-11
 }
 
 class AdhesionController {
@@ -693,13 +720,12 @@ class AdhesionController {
    */
   async traiterPremiereSubmission(req, res, utilisateurExistant, donneesValidees) {
     try {
-      // Convertir les dates en objets Date
-      const convertirDateFrancaise = (dateString) => {
-        if (!dateString) return null;
-        const [jour, mois, annee] = dateString.split('/');
-        return new Date(`${annee}-${mois.padStart(2, '0')}-${jour.padStart(2, '0')}`);
-      };
-
+      logger.info(`DEBUG - traiterPremiereSubmission pour utilisateur ${utilisateurExistant.id}`, {
+        date_naissance: donneesValidees.date_naissance,
+        date_entree_congo: donneesValidees.date_entree_congo,
+        date_emission_piece: donneesValidees.date_emission_piece
+      });
+      
       // Créer le snapshot des données pour le formulaire d'adhésion
       const snapshotDonnees = {
         prenoms: donneesValidees.prenoms,
