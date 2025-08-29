@@ -124,11 +124,12 @@ const options = {
         },
         AdhesionRequest: {
           type: 'object',
-          required: ['prenoms', 'nom', 'telephone', 'date_naissance'],
+          required: ['prenoms', 'nom', 'telephone', 'date_naissance', 'nom_utilisateur', 'url_image_formulaire'],
           properties: {
             prenoms: { type: 'string', example: 'Jean claude', description: 'Prénoms (première lettre en majuscule)' },
             nom: { type: 'string', example: 'MBONGO', description: 'Nom (tout en majuscules)' },
             telephone: { type: 'string', example: '+241066123456' },
+            nom_utilisateur: { type: 'string', example: 'jeanclau.mbongo', description: 'Nom d\'utilisateur pour identifier l\'utilisateur dans la base de données' },
             adresse: { type: 'string', example: 'Libreville, Gabon' },
             date_naissance: { type: 'string', example: '15-03-1990', description: 'Format DD-MM-YYYY' },
             lieu_naissance: { type: 'string', example: 'Port-Gentil', description: 'Lieu de naissance (chaque mot capitalisé)' },
@@ -141,9 +142,10 @@ const options = {
             prenom_conjoint: { type: 'string', example: 'Marie' },
             nom_conjoint: { type: 'string', example: 'MBONGO' },
             nombre_enfants: { type: 'integer', example: 2 },
-            selfie_photo_url: { type: 'string', example: 'https://res.cloudinary.com/example/image/upload/v123456789/selfie.jpg', description: 'URL Cloudinary de la photo selfie' },
+            selfie_photo_url: { type: 'string', example: 'https://res.cloudinary.com/example/image/upload/v123456789/selfie.jpg', description: 'URL Cloudinary de la photo selfie (optionnelle)' },
             signature_url: { type: 'string', example: 'https://res.cloudinary.com/example/image/upload/v123456789/signature.jpg', description: 'URL Cloudinary de la signature (optionnelle)' },
-            commentaire: { type: 'string', example: 'Commentaire optionnel', maxLength: 100, description: 'Commentaire optionnel (100 caractères max)' }
+            commentaire: { type: 'string', example: 'Commentaire optionnel', maxLength: 100, description: 'Commentaire optionnel (100 caractères max)' },
+            url_image_formulaire: { type: 'string', example: 'https://res.cloudinary.com/example/image/upload/v123456789/formulaire.pdf', description: 'URL Cloudinary du PDF du formulaire d\'adhésion généré par le frontend (REQUIS)' }
           }
         },
         ChangeTemporaryPasswordRequest: {
