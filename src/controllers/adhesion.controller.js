@@ -26,6 +26,7 @@ class AdhesionController {
           prenoms: req.body.prenoms,
           nom: req.body.nom,
           telephone: req.body.telephone,
+          nom_utilisateur: req.body.nom_utilisateur,
           date_naissance: req.body.date_naissance
         },
         has_files: !!req.files,
@@ -47,6 +48,7 @@ class AdhesionController {
         prenoms: donneesValidees.prenoms,
         nom: donneesValidees.nom,
         telephone: donneesValidees.telephone,
+        nom_utilisateur: donneesValidees.nom_utilisateur,
         url_image_formulaire: donneesValidees.url_image_formulaire ? 'présent' : 'manquant'
       });
 
@@ -72,14 +74,15 @@ class AdhesionController {
 
       // Note: Le numéro d'adhésion sera généré lors de l'approbation par le secrétaire
       
-      // Vérifier si l'utilisateur existe déjà (pour resoumission)
+      // Vérifier si l'utilisateur existe déjà par nom d'utilisateur (prioritaire) ou téléphone
       // IMPORTANT: Normaliser le téléphone pour la recherche (même logique que Zod transform)
       const telephoneNormalise = donneesValidees.telephone.replace(/\s+/g, '');
-      logger.info(`DEBUG - Recherche utilisateur avec téléphone: "${donneesValidees.telephone}" -> normalisé: "${telephoneNormalise}"`);
+      logger.info(`DEBUG - Recherche utilisateur avec nom_utilisateur: "${donneesValidees.nom_utilisateur}" et téléphone: "${donneesValidees.telephone}" -> normalisé: "${telephoneNormalise}"`);
       
       const utilisateurExistant = await prisma.utilisateur.findFirst({
         where: { 
           OR: [
+            { nom_utilisateur: donneesValidees.nom_utilisateur }, // Recherche prioritaire par nom d'utilisateur
             { telephone: donneesValidees.telephone }, // Format original
             { telephone: telephoneNormalise }         // Format sans espaces
           ]
@@ -116,7 +119,7 @@ class AdhesionController {
       } else {
         // BUSINESS RULE: Seul le secrétaire peut créer des utilisateurs
         // Si aucun utilisateur n'est trouvé, cela signifie qu'il n'a pas été créé par le secrétaire
-        logger.warn(`Tentative de soumission de formulaire pour un utilisateur non créé par le secrétaire - téléphone: ${donneesValidees.telephone}`);
+        logger.warn(`Tentative de soumission de formulaire pour un utilisateur non créé par le secrétaire - nom_utilisateur: ${donneesValidees.nom_utilisateur}, téléphone: ${donneesValidees.telephone}`);
         
         return res.status(404).json({
           error: 'Utilisateur non trouvé',
@@ -124,14 +127,14 @@ class AdhesionController {
           message: 'Votre profil doit d\'abord être créé par le secrétariat avant de pouvoir soumettre un formulaire',
           details: [
             'Contactez le secrétariat pour créer votre profil',
-            'Assurez-vous d\'utiliser le même numéro de téléphone que celui fourni au secrétariat',
-            'Vérifiez le format de votre numéro de téléphone'
+            'Assurez-vous d\'utiliser le même nom d\'utilisateur et numéro de téléphone que ceux fournis au secrétariat',
+            'Vérifiez le format de votre nom d\'utilisateur et numéro de téléphone'
           ]
         });
       }
 
       // Cette ligne ne devrait jamais être atteinte car tous les cas sont traités ci-dessus
-      logger.error(`ERREUR: Cas non traité dans soumettreDemande pour utilisateur avec téléphone: ${donneesValidees.telephone}`);
+      logger.error(`ERREUR: Cas non traité dans soumettreDemande pour utilisateur avec nom_utilisateur: ${donneesValidees.nom_utilisateur}, téléphone: ${donneesValidees.telephone}`);
       return res.status(500).json({
         error: 'Erreur de logique interne',
         code: 'CAS_NON_TRAITE',
@@ -146,6 +149,7 @@ class AdhesionController {
             prenoms: req.body.prenoms,
             nom: req.body.nom,
             telephone: req.body.telephone,
+            nom_utilisateur: req.body.nom_utilisateur,
             url_image_formulaire: req.body.url_image_formulaire ? 'présent' : 'manquant'
           }
         });

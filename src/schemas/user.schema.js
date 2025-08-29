@@ -144,7 +144,14 @@ const adhesionSchema = z.object({
   // URL du PDF généré par le frontend (REQUIS)
   url_image_formulaire: z.string()
     .url('URL du formulaire PDF invalide')
-    .min(1, 'L\'URL du formulaire PDF est requise')
+    .min(1, 'L\'URL du formulaire PDF est requise'),
+
+  // Nom d'utilisateur pour la recherche dans la base de données (REQUIS)
+  nom_utilisateur: z.string()
+    .min(3, 'Le nom d\'utilisateur doit contenir au moins 3 caractères')
+    .max(50, 'Le nom d\'utilisateur ne peut dépasser 50 caractères')
+    .regex(/^[a-zA-Z0-9_.-]+$/, 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres, points, tirets et underscores')
+    .transform(str => str.toLowerCase())
 });
 
 // File validation schema
