@@ -580,20 +580,67 @@ class ControleurSecretaire {
         message: 'Liste des formulaires récupérée',
         donnees: {
           formulaires: utilisateurs.map(user => ({
+            // Basic info
             id: user.id,
+            numero_adhesion: user.numero_adhesion,
+            nom_utilisateur: user.nom_utilisateur,
+            prenoms: user.prenoms,
+            nom: user.nom,
             nom_complet: `${user.prenoms} ${user.nom}`,
             email: user.email,
             telephone: user.telephone,
+            
+            // Personal info
+            photo_profil_url: user.photo_profil_url,
+            date_naissance: user.date_naissance,
+            lieu_naissance: user.lieu_naissance,
+            adresse: user.adresse,
+            profession: user.profession,
+            ville_residence: user.ville_residence,
+            date_entree_congo: user.date_entree_congo,
+            employeur_ecole: user.employeur_ecole,
+            
+            // Consular card info
+            numero_carte_consulaire: user.numero_carte_consulaire,
+            date_emission_piece: user.date_emission_piece,
+            
+            // Photos and signature
+            selfie_photo_url: user.selfie_photo_url,
+            signature_url: user.signature_url,
+            commentaire: user.commentaire,
+            
+            // Family info
+            prenom_conjoint: user.prenom_conjoint,
+            nom_conjoint: user.nom_conjoint,
+            nombre_enfants: user.nombre_enfants,
+            
+            // System fields
+            role: user.role,
             statut: user.statut,
             code_formulaire: user.code_formulaire,
-            soumis_le: user.modifie_le,
+            url_qr_code: user.url_qr_code,
+            carte_emise_le: user.carte_emise_le,
             raison_rejet: user.raison_rejet,
             rejete_le: user.rejete_le,
             rejete_par: user.rejete_par,
+            
+            // Auth fields
+            doit_changer_mot_passe: user.doit_changer_mot_passe,
+            a_change_mot_passe_temporaire: user.a_change_mot_passe_temporaire,
+            a_paye: user.a_paye,
+            a_soumis_formulaire: user.a_soumis_formulaire,
+            derniere_connexion: user.derniere_connexion,
             est_actif: user.est_actif,
             desactive_le: user.desactive_le,
             desactive_par: user.desactive_par,
             raison_desactivation: user.raison_desactivation,
+            
+            // Timestamps
+            cree_le: user.cree_le,
+            modifie_le: user.modifie_le,
+            soumis_le: user.modifie_le, // Alias for backward compatibility
+            
+            // Form data
             formulaire_actuel: user.formulaires_adhesion[0] || null
           })),
           pagination: {
