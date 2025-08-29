@@ -660,24 +660,74 @@ class AuthController {
         });
       }
 
-      // Fetch complete user data including form status
+      // Fetch complete user data including all available fields and form information
       const utilisateurComplet = await prisma.utilisateur.findUnique({
         where: { id: req.user.id },
         select: {
+          // Basic info
           id: true,
+          numero_adhesion: true,
           nom_utilisateur: true,
           prenoms: true,
           nom: true,
+          email: true,
+          telephone: true,
+          
+          // Personal info
+          photo_profil_url: true,
+          date_naissance: true,
+          lieu_naissance: true,
+          adresse: true,
+          profession: true,
+          ville_residence: true,
+          date_entree_congo: true,
+          employeur_ecole: true,
+          
+          // Consular card info
+          numero_carte_consulaire: true,
+          date_emission_piece: true,
+          
+          // Photos and signature
+          selfie_photo_url: true,
+          signature_url: true,
+          commentaire: true,
+          
+          // Family info
+          prenom_conjoint: true,
+          nom_conjoint: true,
+          nombre_enfants: true,
+          
+          // System fields
           role: true,
           statut: true,
-          doit_changer_mot_passe: true,
-          a_soumis_formulaire: true,
+          code_formulaire: true,
+          url_qr_code: true,
+          carte_emise_le: true,
           raison_rejet: true,
           rejete_le: true,
           rejete_par: true,
+          
+          // Auth fields
+          doit_changer_mot_passe: true,
+          a_change_mot_passe_temporaire: true,
+          a_paye: true,
+          a_soumis_formulaire: true,
+          derniere_connexion: true,
           est_actif: true,
-          code_formulaire: true,
-          carte_emise_le: true
+          desactive_le: true,
+          desactive_par: true,
+          raison_desactivation: true,
+          
+          // Timestamps
+          cree_le: true,
+          modifie_le: true
+        },
+        include: {
+          formulaires_adhesion: {
+            where: { est_version_active: true },
+            orderBy: { numero_version: 'desc' },
+            take: 1
+          }
         }
       });
 
@@ -705,15 +755,70 @@ class AuthController {
         prochaine_action = 'ACCES_COMPLET';
       }
 
+      // Get the active form data
+      const formulaireActif = utilisateurComplet.formulaires_adhesion?.[0] || null;
+
       res.json({
         authentifie: true,
         utilisateur: {
+          // Basic info
           id: utilisateurComplet.id,
+          numero_adhesion: utilisateurComplet.numero_adhesion,
           nom_utilisateur: utilisateurComplet.nom_utilisateur,
+          prenoms: utilisateurComplet.prenoms,
+          nom: utilisateurComplet.nom,
           nom_complet: `${utilisateurComplet.prenoms} ${utilisateurComplet.nom}`,
+          email: utilisateurComplet.email,
+          telephone: utilisateurComplet.telephone,
+          
+          // Personal info
+          photo_profil_url: utilisateurComplet.photo_profil_url,
+          date_naissance: utilisateurComplet.date_naissance,
+          lieu_naissance: utilisateurComplet.lieu_naissance,
+          adresse: utilisateurComplet.adresse,
+          profession: utilisateurComplet.profession,
+          ville_residence: utilisateurComplet.ville_residence,
+          date_entree_congo: utilisateurComplet.date_entree_congo,
+          employeur_ecole: utilisateurComplet.employeur_ecole,
+          
+          // Consular card info
+          numero_carte_consulaire: utilisateurComplet.numero_carte_consulaire,
+          date_emission_piece: utilisateurComplet.date_emission_piece,
+          
+          // Photos and signature
+          selfie_photo_url: utilisateurComplet.selfie_photo_url,
+          signature_url: utilisateurComplet.signature_url,
+          commentaire: utilisateurComplet.commentaire,
+          
+          // Family info
+          prenom_conjoint: utilisateurComplet.prenom_conjoint,
+          nom_conjoint: utilisateurComplet.nom_conjoint,
+          nombre_enfants: utilisateurComplet.nombre_enfants,
+          
+          // System fields
           role: utilisateurComplet.role,
           statut: utilisateurComplet.statut,
-          est_actif: utilisateurComplet.est_actif
+          code_formulaire: utilisateurComplet.code_formulaire,
+          url_qr_code: utilisateurComplet.url_qr_code,
+          carte_emise_le: utilisateurComplet.carte_emise_le,
+          raison_rejet: utilisateurComplet.raison_rejet,
+          rejete_le: utilisateurComplet.rejete_le,
+          rejete_par: utilisateurComplet.rejete_par,
+          
+          // Auth fields
+          doit_changer_mot_passe: utilisateurComplet.doit_changer_mot_passe,
+          a_change_mot_passe_temporaire: utilisateurComplet.a_change_mot_passe_temporaire,
+          a_paye: utilisateurComplet.a_paye,
+          a_soumis_formulaire: utilisateurComplet.a_soumis_formulaire,
+          derniere_connexion: utilisateurComplet.derniere_connexion,
+          est_actif: utilisateurComplet.est_actif,
+          desactive_le: utilisateurComplet.desactive_le,
+          desactive_par: utilisateurComplet.desactive_par,
+          raison_desactivation: utilisateurComplet.raison_desactivation,
+          
+          // Timestamps
+          cree_le: utilisateurComplet.cree_le,
+          modifie_le: utilisateurComplet.modifie_le
         },
         doit_changer_mot_passe: utilisateurComplet.doit_changer_mot_passe,
         doit_soumettre_formulaire: !utilisateurComplet.a_soumis_formulaire,
@@ -726,6 +831,15 @@ class AuthController {
           rejete_le: utilisateurComplet.rejete_le,
           rejete_par: utilisateurComplet.rejete_par
         },
+        formulaire_adhesion: formulaireActif ? {
+          id: formulaireActif.id,
+          numero_version: formulaireActif.numero_version,
+          url_image_formulaire: formulaireActif.url_image_formulaire,
+          donnees_snapshot: formulaireActif.donnees_snapshot,
+          est_version_active: formulaireActif.est_version_active,
+          cree_le: formulaireActif.cree_le,
+          modifie_le: formulaireActif.modifie_le
+        } : null,
         prochaine_action,
         compte_actif: utilisateurComplet.est_actif
       });
