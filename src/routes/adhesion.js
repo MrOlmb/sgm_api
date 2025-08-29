@@ -311,7 +311,7 @@ const router = express.Router();
 router.post(
   '/soumettre',
   uploadLimiter, // Rate limiting pour les requêtes
-  adhesionController.soumettreDemande
+  (req, res) => adhesionController.soumettreDemande(req, res)
 );
 
 /**
@@ -435,7 +435,7 @@ router.post(
  *                   type: string
  *                   example: "ADHESION_NON_TROUVEE"
  */
-router.get('/statut', adhesionController.obtenirStatutAdhesion);
+router.get('/statut', (req, res) => adhesionController.obtenirStatutAdhesion(req, res));
 
 /**
  * @swagger
@@ -473,7 +473,7 @@ router.get('/statut', adhesionController.obtenirStatutAdhesion);
  *                       type: string
  *                       example: "url_image_formulaire (URL Cloudinary du PDF)"
  */
-router.get('/schema', adhesionController.getAdhesionSchema);
+router.get('/schema', (req, res) => adhesionController.getAdhesionSchema(req, res));
 
 /**
  * @swagger
@@ -583,7 +583,7 @@ router.get('/schema', adhesionController.getAdhesionSchema);
  *                   type: string
  *                   example: "FORMULAIRE_REJETE_NON_TROUVE"
  */
-router.put('/resoumission', uploadLimiter, adhesionController.resoumettreDemande);
+router.put('/resoumission', uploadLimiter, (req, res) => adhesionController.resoumettreDemande(req, res));
 
 /**
  * @swagger
@@ -626,7 +626,7 @@ router.put('/resoumission', uploadLimiter, adhesionController.resoumettreDemande
  *       404:
  *         description: Aucun rejet trouvé pour ce téléphone
  */
-router.get('/details-rejet', adhesionController.obtenirDetailsRejet);
+router.get('/details-rejet', (req, res) => adhesionController.obtenirDetailsRejet(req, res));
 
 // ENDPOINT SUPPRIMÉ: PUT /api/adhesion/pdf-final/{id_utilisateur}
 // Le workflow est maintenant synchrone via l'endpoint d'approbation du secrétaire
