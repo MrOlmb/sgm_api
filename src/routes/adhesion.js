@@ -48,6 +48,7 @@ const router = express.Router();
  *             required:
  *               - prenoms
  *               - nom
+ *               - nom_utilisateur
  *               - date_naissance
  *               - lieu_naissance
  *               - adresse
@@ -69,6 +70,13 @@ const router = express.Router();
  *                 minLength: 2
  *                 maxLength: 50
  *                 example: "MBONGO"
+ *               nom_utilisateur:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 50
+ *                 pattern: '^[a-zA-Z0-9_.-]+$'
+ *                 description: "Nom d'utilisateur pour identifier l'utilisateur créé par le secrétaire (lettres, chiffres, points, tirets, underscores)"
+ *                 example: "jeanclau.mbongo"
  *               date_naissance:
  *                 type: string
  *                 pattern: '^\\d{2}-\\d{2}-\\d{4}$'
@@ -158,6 +166,7 @@ const router = express.Router();
  *           example:
  *             prenoms: "Jean Claude"
  *             nom: "MBONGO"
+ *             nom_utilisateur: "jeanclau.mbongo"
  *             date_naissance: "15-03-1990"
  *             lieu_naissance: "Brazzaville"
  *             adresse: "123 Avenue de la République, Quartier Centre"
