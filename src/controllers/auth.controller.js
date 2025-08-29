@@ -720,9 +720,9 @@ class AuthController {
           
           // Timestamps
           cree_le: true,
-          modifie_le: true
-        },
-        include: {
+          modifie_le: true,
+          
+          // Now nest the relation here (as suggested)
           formulaires_adhesion: {
             where: { est_version_active: true },
             orderBy: { numero_version: 'desc' },
