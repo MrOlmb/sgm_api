@@ -692,6 +692,12 @@ class AuthController {
           signature_url: true,
           commentaire: true,
           
+          // Membership card images
+          carte_recto_url: true,
+          carte_verso_url: true,
+          carte_generee_le: true,
+          carte_generee_par: true,
+          
           // Family info
           prenom_conjoint: true,
           nom_conjoint: true,
@@ -726,7 +732,15 @@ class AuthController {
           formulaires_adhesion: {
             where: { est_version_active: true },
             orderBy: { numero_version: 'desc' },
-            take: 1
+            take: 1,
+            select: {
+              id: true,
+              numero_version: true,
+              url_image_formulaire: true,
+              donnees_snapshot: true,
+              est_version_active: true,
+              cree_le: true
+            }
           }
         }
       });
@@ -790,6 +804,12 @@ class AuthController {
           signature_url: utilisateurComplet.signature_url,
           commentaire: utilisateurComplet.commentaire,
           
+          // Membership card images
+          carte_recto_url: utilisateurComplet.carte_recto_url,
+          carte_verso_url: utilisateurComplet.carte_verso_url,
+          carte_generee_le: utilisateurComplet.carte_generee_le,
+          carte_generee_par: utilisateurComplet.carte_generee_par,
+          
           // Family info
           prenom_conjoint: utilisateurComplet.prenom_conjoint,
           nom_conjoint: utilisateurComplet.nom_conjoint,
@@ -840,6 +860,23 @@ class AuthController {
           cree_le: formulaireActif.cree_le,
           modifie_le: formulaireActif.modifie_le
         } : null,
+        images: {
+          // User photos
+          photo_profil: utilisateurComplet.photo_profil_url,
+          selfie_photo: utilisateurComplet.selfie_photo_url,
+          signature: utilisateurComplet.signature_url,
+          
+          // Membership cards (if generated)
+          carte_membre: {
+            recto: utilisateurComplet.carte_recto_url,
+            verso: utilisateurComplet.carte_verso_url,
+            generee_le: utilisateurComplet.carte_generee_le,
+            generee_par: utilisateurComplet.carte_generee_par
+          },
+          
+          // Form PDF (from active form)
+          formulaire_pdf: formulaireActif?.url_image_formulaire || null
+        },
         prochaine_action,
         compte_actif: utilisateurComplet.est_actif
       });

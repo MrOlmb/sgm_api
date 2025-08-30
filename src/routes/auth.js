@@ -283,7 +283,7 @@ router.get('/profil', authentifierJWT, authController.obtenirProfil);
  *     summary: Obtenir statut utilisateur complet
  *     description: |
  *       Obtenir le statut complet de l'utilisateur authentifié incluant les informations 
- *       de formulaire d'adhésion pour redirection frontend appropriée
+ *       de formulaire d'adhésion, images et cartes de membre pour redirection frontend appropriée
  *     tags: [Authentication]
  *     security:
  *       - BearerAuth: []
@@ -301,22 +301,209 @@ router.get('/profil', authentifierJWT, authController.obtenirProfil);
  *                 utilisateur:
  *                   type: object
  *                   properties:
+ *                     # Informations de base
  *                     id:
  *                       type: integer
+ *                       example: 1
+ *                     numero_adhesion:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "N°001/AGCO/M/2025"
  *                     nom_utilisateur:
  *                       type: string
+ *                       example: "jean.mbongo"
+ *                     prenoms:
+ *                       type: string
+ *                       example: "Jean Claude"
+ *                     nom:
+ *                       type: string
+ *                       example: "MBONGO"
  *                     nom_complet:
  *                       type: string
- *                       example: "Jean Claude Mbongo"
+ *                       example: "Jean Claude MBONGO"
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                       nullable: true
+ *                       example: "jean.mbongo@example.com"
+ *                     telephone:
+ *                       type: string
+ *                       example: "+241066123456"
+ *                     # Informations personnelles
+ *                     photo_profil_url:
+ *                       type: string
+ *                       format: uri
+ *                       nullable: true
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/profil.jpg"
+ *                     date_naissance:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "15-03-1990"
+ *                     lieu_naissance:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "Port-Gentil"
+ *                     adresse:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "Libreville, Gabon"
+ *                     profession:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "Ingénieur"
+ *                     ville_residence:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "Libreville"
+ *                     date_entree_congo:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "10-01-2020"
+ *                     employeur_ecole:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "Total Gabon"
+ *                     # Informations carte consulaire
+ *                     numero_carte_consulaire:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "CC123456"
+ *                     date_emission_piece:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "15-06-2023"
+ *                     # Photos et signature
+ *                     selfie_photo_url:
+ *                       type: string
+ *                       format: uri
+ *                       nullable: true
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/selfie.jpg"
+ *                     signature_url:
+ *                       type: string
+ *                       format: uri
+ *                       nullable: true
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/signature.jpg"
+ *                     commentaire:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "Commentaire optionnel"
+ *                     # Images de cartes de membre (nouvelles)
+ *                     carte_recto_url:
+ *                       type: string
+ *                       format: uri
+ *                       nullable: true
+ *                       description: URL de l'image recto de la carte de membre
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/carte-recto.jpg"
+ *                     carte_verso_url:
+ *                       type: string
+ *                       format: uri
+ *                       nullable: true
+ *                       description: URL de l'image verso de la carte de membre
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/carte-verso.jpg"
+ *                     carte_generee_le:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                       description: Date de génération de la carte de membre
+ *                       example: "2025-01-15T10:30:00Z"
+ *                     carte_generee_par:
+ *                       type: integer
+ *                       nullable: true
+ *                       description: ID de l'utilisateur qui a généré la carte
+ *                       example: 2
+ *                     # Informations familiales
+ *                     prenom_conjoint:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "Marie"
+ *                     nom_conjoint:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "MBONGO"
+ *                     nombre_enfants:
+ *                       type: integer
+ *                       nullable: true
+ *                       example: 2
+ *                     # Champs système
  *                     role:
  *                       type: string
  *                       enum: [MEMBRE, SECRETAIRE_GENERALE, PRESIDENT]
+ *                       example: "MEMBRE"
  *                     statut:
  *                       type: string
  *                       enum: [EN_ATTENTE, APPROUVE, REJETE]
+ *                       example: "APPROUVE"
+ *                     code_formulaire:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "SGM-2025-001"
+ *                     url_qr_code:
+ *                       type: string
+ *                       format: uri
+ *                       nullable: true
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/qr-code.jpg"
+ *                     carte_emise_le:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                       example: "2025-01-15T10:30:00Z"
+ *                     raison_rejet:
+ *                       type: string
+ *                       nullable: true
+ *                       example: null
+ *                     rejete_le:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                       example: null
+ *                     rejete_par:
+ *                       type: integer
+ *                       nullable: true
+ *                       example: null
+ *                     # Champs d'authentification
+ *                     doit_changer_mot_passe:
+ *                       type: boolean
+ *                       example: false
+ *                     a_change_mot_passe_temporaire:
+ *                       type: boolean
+ *                       example: true
+ *                     a_paye:
+ *                       type: boolean
+ *                       example: true
+ *                     a_soumis_formulaire:
+ *                       type: boolean
+ *                       example: true
+ *                     derniere_connexion:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                       example: "2025-01-15T10:30:00Z"
  *                     est_actif:
  *                       type: boolean
  *                       description: True si le compte est actif
+ *                       example: true
+ *                     desactive_le:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                       example: null
+ *                     desactive_par:
+ *                       type: integer
+ *                       nullable: true
+ *                       example: null
+ *                     raison_desactivation:
+ *                       type: string
+ *                       nullable: true
+ *                       example: null
+ *                     # Timestamps
+ *                     cree_le:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-01-01T08:00:00Z"
+ *                     modifie_le:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-01-15T10:30:00Z"
  *                 doit_changer_mot_passe:
  *                   type: boolean
  *                   description: True si l'utilisateur doit changer son mot de passe
@@ -332,33 +519,123 @@ router.get('/profil', authentifierJWT, authController.obtenirProfil);
  *                     soumis:
  *                       type: boolean
  *                       description: True si le formulaire a été soumis
+ *                       example: true
  *                     statut:
  *                       type: string
  *                       enum: [EN_ATTENTE, APPROUVE, REJETE]
  *                       description: Statut d'approbation du formulaire
+ *                       example: "APPROUVE"
  *                     code_formulaire:
  *                       type: string
  *                       nullable: true
  *                       description: Code du formulaire si approuvé
- *                       example: "N°001/AGCO/M/2025"
+ *                       example: "SGM-2025-001"
  *                     carte_emise_le:
  *                       type: string
  *                       format: date-time
  *                       nullable: true
  *                       description: Date d'émission de la carte de membre
+ *                       example: "2025-01-15T10:30:00Z"
  *                     raison_rejet:
  *                       type: string
  *                       nullable: true
  *                       description: Raison du rejet si applicable
+ *                       example: null
  *                     rejete_le:
  *                       type: string
  *                       format: date-time
  *                       nullable: true
  *                       description: Date de rejet si applicable
+ *                       example: null
  *                     rejete_par:
  *                       type: integer
  *                       nullable: true
  *                       description: ID du secrétaire qui a rejeté
+ *                       example: null
+ *                 formulaire_adhesion:
+ *                   type: object
+ *                   nullable: true
+ *                   description: Données du formulaire d'adhésion actif
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     numero_version:
+ *                       type: integer
+ *                       example: 1
+ *                     url_image_formulaire:
+ *                       type: string
+ *                       format: uri
+ *                       example: "https://res.cloudinary.com/sgm/raw/upload/v123456789/formulaire.pdf"
+ *                     donnees_snapshot:
+ *                       type: object
+ *                       description: Snapshot des données du formulaire au moment de la soumission
+ *                     est_version_active:
+ *                       type: boolean
+ *                       example: true
+ *                     cree_le:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-01-15T10:30:00Z"
+ *                     modifie_le:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-01-15T10:30:00Z"
+ *                 images:
+ *                   type: object
+ *                   description: Section organisée des images utilisateur
+ *                   properties:
+ *                     photo_profil:
+ *                       type: string
+ *                       format: uri
+ *                       nullable: true
+ *                       description: Photo de profil de l'utilisateur
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/profil.jpg"
+ *                     selfie_photo:
+ *                       type: string
+ *                       format: uri
+ *                       nullable: true
+ *                       description: Photo selfie pour vérification d'identité
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/selfie.jpg"
+ *                     signature:
+ *                       type: string
+ *                       format: uri
+ *                       nullable: true
+ *                       description: Signature numérisée de l'utilisateur
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/signature.jpg"
+ *                     carte_membre:
+ *                       type: object
+ *                       description: Images de la carte de membre (si générée)
+ *                       properties:
+ *                         recto:
+ *                           type: string
+ *                           format: uri
+ *                           nullable: true
+ *                           description: Image recto de la carte de membre
+ *                           example: "https://res.cloudinary.com/sgm/image/upload/v123456789/carte-recto.jpg"
+ *                         verso:
+ *                           type: string
+ *                           format: uri
+ *                           nullable: true
+ *                           description: Image verso de la carte de membre
+ *                           example: "https://res.cloudinary.com/sgm/image/upload/v123456789/carte-verso.jpg"
+ *                         generee_le:
+ *                           type: string
+ *                           format: date-time
+ *                           nullable: true
+ *                           description: Date de génération de la carte
+ *                           example: "2025-01-15T10:30:00Z"
+ *                         generee_par:
+ *                           type: integer
+ *                           nullable: true
+ *                           description: ID de l'utilisateur qui a généré la carte
+ *                           example: 2
+ *                     formulaire_pdf:
+ *                       type: string
+ *                       format: uri
+ *                       nullable: true
+ *                       description: PDF du formulaire d'adhésion
+ *                       example: "https://res.cloudinary.com/sgm/raw/upload/v123456789/formulaire.pdf"
  *                 prochaine_action:
  *                   type: string
  *                   enum: [CHANGER_MOT_PASSE, SOUMETTRE_FORMULAIRE, ATTENDRE_APPROBATION, REVOIR_REJET, ACCES_COMPLET]
