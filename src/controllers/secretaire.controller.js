@@ -1515,7 +1515,11 @@ class ControleurSecretaire {
           code_formulaire: true,
           url_qr_code: true,
           carte_emise_le: true,
-          photo_profil_url: true
+          photo_profil_url: true,
+          carte_recto_url: true,
+          carte_verso_url: true,
+          carte_generee_le: true,
+          carte_generee_par: true
         },
         orderBy: {
           carte_emise_le: 'desc'
@@ -1557,7 +1561,14 @@ class ControleurSecretaire {
         photo_profil_url: carte.photo_profil_url,
         date_emission: new Date(carte.carte_emise_le),
         signature_presidente_url: signaturePresident?.url_signature || null,
-        nom_presidente: signaturePresident ? `${signaturePresident.utilisateur.prenoms} ${signaturePresident.utilisateur.nom}` : null
+        nom_presidente: signaturePresident ? `${signaturePresident.utilisateur.prenoms} ${signaturePresident.utilisateur.nom}` : null,
+        // Membership card images from Cloudinary
+        carte_membre: {
+          recto_url: carte.carte_recto_url,
+          verso_url: carte.carte_verso_url,
+          generee_le: carte.carte_generee_le,
+          generee_par: carte.carte_generee_par
+        }
       }));
 
       res.json({

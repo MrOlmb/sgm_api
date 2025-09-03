@@ -90,23 +90,60 @@ router.get('/formulaire-adhesion', authentifierJWT, generalLimiter, membreContro
  *                       example: "SGM-2025-001"
  *                     nom_complet:
  *                       type: string
- *                       example: "Jean Claude Mbongo"
+ *                       example: "Jean Claude MBONGO"
  *                     photo_profil_url:
  *                       type: string
- *                       example: "https://res.cloudinary.com/..."
+ *                       format: uri
+ *                       nullable: true
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/profil.jpg"
  *                     code_formulaire:
  *                       type: string
  *                       example: "FC-2025-001"
  *                     url_qr_code:
  *                       type: string
- *                       example: "https://res.cloudinary.com/qr-code.png"
+ *                       format: uri
+ *                       nullable: true
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/qr-code.jpg"
  *                     date_emission:
  *                       type: string
  *                       format: date
  *                       example: "13-08-2025"
  *                     signature_presidente_url:
  *                       type: string
- *                       example: "https://res.cloudinary.com/signature.png"
+ *                       format: uri
+ *                       nullable: true
+ *                       example: "https://res.cloudinary.com/sgm/image/upload/v123456789/signature-presidente.jpg"
+ *                     nom_presidente:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "Marie DUPONT"
+ *                     carte_membre:
+ *                       type: object
+ *                       description: Images de la carte de membre stockées sur Cloudinary
+ *                       properties:
+ *                         recto_url:
+ *                           type: string
+ *                           format: uri
+ *                           nullable: true
+ *                           description: URL de l'image recto de la carte de membre
+ *                           example: "https://res.cloudinary.com/sgm/image/upload/v123456789/carte-recto.jpg"
+ *                         verso_url:
+ *                           type: string
+ *                           format: uri
+ *                           nullable: true
+ *                           description: URL de l'image verso de la carte de membre
+ *                           example: "https://res.cloudinary.com/sgm/image/upload/v123456789/carte-verso.jpg"
+ *                         generee_le:
+ *                           type: string
+ *                           format: date-time
+ *                           nullable: true
+ *                           description: Date de génération des cartes
+ *                           example: "2025-01-15T10:30:00Z"
+ *                         generee_par:
+ *                           type: integer
+ *                           nullable: true
+ *                           description: ID de l'utilisateur qui a généré les cartes
+ *                           example: 2
  *       404:
  *         description: Carte non disponible (statut non approuvé)
  *         content:

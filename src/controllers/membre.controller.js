@@ -102,7 +102,22 @@ class MembreController {
 
       // Récupérer l'utilisateur
       const utilisateur = await prisma.utilisateur.findUnique({
-        where: { id: utilisateurId }
+        where: { id: utilisateurId },
+        select: {
+          id: true,
+          numero_adhesion: true,
+          prenoms: true,
+          nom: true,
+          photo_profil_url: true,
+          code_formulaire: true,
+          url_qr_code: true,
+          carte_emise_le: true,
+          statut: true,
+          carte_recto_url: true,
+          carte_verso_url: true,
+          carte_generee_le: true,
+          carte_generee_par: true
+        }
       });
 
       if (!utilisateur) {
@@ -150,7 +165,14 @@ class MembreController {
         url_qr_code: utilisateur.url_qr_code,
         date_emission: utilisateur.carte_emise_le ? formatterDateFrancaise(utilisateur.carte_emise_le) : null,
         signature_presidente_url: signaturePresident?.url_signature || null,
-        nom_presidente: signaturePresident ? `${signaturePresident.utilisateur.prenoms} ${signaturePresident.utilisateur.nom}` : null
+        nom_presidente: signaturePresident ? `${signaturePresident.utilisateur.prenoms} ${signaturePresident.utilisateur.nom}` : null,
+        // Membership card images from Cloudinary
+        carte_membre: {
+          recto_url: utilisateur.carte_recto_url,
+          verso_url: utilisateur.carte_verso_url,
+          generee_le: utilisateur.carte_generee_le,
+          generee_par: utilisateur.carte_generee_par
+        }
       };
 
       res.json({
