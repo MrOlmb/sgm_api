@@ -80,6 +80,7 @@ model Utilisateur {
   formulaires_adhesion   FormulaireAdhesion[]
   tokens_recuperation    TokenRecuperation[]
   textes_officiels       TexteOfficiel[]
+  categories_texte_officiel CategorieTexteOfficiel[]
 }
 
 model Signature {
@@ -134,7 +135,7 @@ model TexteOfficiel {
   id                 Int       @id @default(autoincrement())
   titre              String    // Titre du document
   description        String?   // Description optionnelle
-  type_document      TypeDocumentOfficiel // Type de document
+  id_categorie       Int       // ID de la catégorie (OBLIGATOIRE)
   url_cloudinary     String    // URL du fichier PDF sur Cloudinary
   cloudinary_id      String    // ID Cloudinary pour gestion/suppression
   taille_fichier     Int?      // Taille du fichier en bytes
@@ -150,6 +151,23 @@ model TexteOfficiel {
   
   // Relations
   utilisateur        Utilisateur @relation(fields: [telecharge_par], references: [id])
+  categorie          CategorieTexteOfficiel @relation(fields: [id_categorie], references: [id])
+}
+
+model CategorieTexteOfficiel {
+  id                 Int       @id @default(autoincrement())
+  nom                String    @unique // Nom de la catégorie (ex: "PV Réunion", "Décisions")
+  description        String?   // Description de la catégorie
+  
+  // Informations système
+  cree_par           Int       // ID du secrétaire qui a créé la catégorie
+  cree_le            DateTime  @default(now())
+  modifie_le         DateTime  @updatedAt
+  est_actif          Boolean   @default(true) // True si la catégorie est active
+  
+  // Relations
+  createur           Utilisateur @relation(fields: [cree_par], references: [id])
+  textes_officiels   TexteOfficiel[] // Textes officiels de cette catégorie
 }
 
 enum Statut {
@@ -164,10 +182,4 @@ enum Role {
   PRESIDENT
 }
 
-enum TypeDocumentOfficiel {
-  PV_REUNION
-  COMPTE_RENDU
-  DECISION
-  REGLEMENT_INTERIEUR
-}
 

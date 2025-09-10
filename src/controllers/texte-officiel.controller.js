@@ -4,8 +4,7 @@ const {
   creerTexteOfficielSchema, 
   mettreAJourTexteOfficielSchema, 
   filtrerTextesOfficielsSchema,
-  idDocumentSchema,
-  obtenirLabelTypeDocument 
+  idDocumentSchema
 } = require('../schemas/texte-officiel.schema');
 
 class TexteOfficielController {
@@ -26,12 +25,28 @@ class TexteOfficielController {
         });
       }
 
+      // Vérifier que la catégorie existe et est active
+      const categorie = await prisma.categorieTexteOfficiel.findFirst({
+        where: {
+          id: donneesValidees.id_categorie,
+          est_actif: true
+        }
+      });
+
+      if (!categorie) {
+        return res.status(400).json({
+          erreur: 'Catégorie invalide ou inactive',
+          code: 'CATEGORIE_INVALIDE',
+          details: 'La catégorie spécifiée n\'existe pas ou n\'est pas active'
+        });
+      }
+
       // Créer le document
       const nouveauTexte = await prisma.texteOfficiel.create({
         data: {
           titre: donneesValidees.titre,
           description: donneesValidees.description,
-          type_document: donneesValidees.type_document,
+          id_categorie: donneesValidees.id_categorie,
           url_cloudinary: donneesValidees.url_cloudinary,
           cloudinary_id: donneesValidees.cloudinary_id,
           taille_fichier: donneesValidees.taille_fichier,
@@ -45,6 +60,13 @@ class TexteOfficielController {
               nom: true,
               role: true
             }
+          },
+          categorie: {
+            select: {
+              id: true,
+              nom: true,
+              description: true
+            }
           }
         }
       });
@@ -57,7 +79,8 @@ class TexteOfficielController {
           details: {
             document_id: nouveauTexte.id,
             titre: nouveauTexte.titre,
-            type_document: nouveauTexte.type_document,
+            categorie_id: nouveauTexte.id_categorie,
+            categorie_nom: nouveauTexte.categorie.nom,
             taille_fichier: nouveauTexte.taille_fichier
           },
           adresse_ip: req.ip,
@@ -65,9 +88,9 @@ class TexteOfficielController {
         }
       });
 
-      logger.info(`Texte officiel uploadé: ${nouveauTexte.titre} par ${req.utilisateur.nom_utilisateur}`, {
+      logger.info(`Texte officiel uploadé: ${nouveauTexte.titre} dans la catégorie "${nouveauTexte.categorie.nom}" par ${req.utilisateur.nom_utilisateur}`, {
         document_id: nouveauTexte.id,
-        type_document: nouveauTexte.type_document,
+        categorie_id: nouveauTexte.id_categorie,
         utilisateur_id: utilisateurId
       });
 
@@ -77,8 +100,11 @@ class TexteOfficielController {
           id: nouveauTexte.id,
           titre: nouveauTexte.titre,
           description: nouveauTexte.description,
-          type_document: nouveauTexte.type_document,
-          type_document_label: obtenirLabelTypeDocument(nouveauTexte.type_document),
+          categorie: {
+            id: nouveauTexte.categorie.id,
+            nom: nouveauTexte.categorie.nom,
+            description: nouveauTexte.categorie.description
+          },
           url_cloudinary: nouveauTexte.url_cloudinary,
           taille_fichier: nouveauTexte.taille_fichier,
           nom_fichier_original: nouveauTexte.nom_fichier_original,
@@ -122,8 +148,9 @@ class TexteOfficielController {
         est_actif: true // Seuls les documents actifs
       };
 
-      if (filtres.type_document) {
-        where.type_document = filtres.type_document;
+      // Filter by category
+      if (filtres.id_categorie) {
+        where.id_categorie = filtres.id_categorie;
       }
 
       if (filtres.recherche) {
@@ -147,6 +174,13 @@ class TexteOfficielController {
                 nom: true,
                 role: true
               }
+            },
+            categorie: {
+              select: {
+                id: true,
+                nom: true,
+                description: true
+              }
             }
           },
           orderBy: {
@@ -166,8 +200,11 @@ class TexteOfficielController {
           id: doc.id,
           titre: doc.titre,
           description: doc.description,
-          type_document: doc.type_document,
-          type_document_label: obtenirLabelTypeDocument(doc.type_document),
+          categorie: {
+            id: doc.categorie.id,
+            nom: doc.categorie.nom,
+            description: doc.categorie.description
+          },
           url_cloudinary: doc.url_cloudinary,
           taille_fichier: doc.taille_fichier,
           nom_fichier_original: doc.nom_fichier_original,
@@ -222,6 +259,13 @@ class TexteOfficielController {
               nom: true,
               role: true
             }
+          },
+          categorie: {
+            select: {
+              id: true,
+              nom: true,
+              description: true
+            }
           }
         }
       });
@@ -239,8 +283,11 @@ class TexteOfficielController {
           id: document.id,
           titre: document.titre,
           description: document.description,
-          type_document: document.type_document,
-          type_document_label: obtenirLabelTypeDocument(document.type_document),
+          categorie: {
+            id: document.categorie.id,
+            nom: document.categorie.nom,
+            description: document.categorie.description
+          },
           url_cloudinary: document.url_cloudinary,
           taille_fichier: document.taille_fichier,
           nom_fichier_original: document.nom_fichier_original,
@@ -306,6 +353,13 @@ class TexteOfficielController {
               nom: true,
               role: true
             }
+          },
+          categorie: {
+            select: {
+              id: true,
+              nom: true,
+              description: true
+            }
           }
         }
       });
@@ -335,8 +389,11 @@ class TexteOfficielController {
           id: documentMisAJour.id,
           titre: documentMisAJour.titre,
           description: documentMisAJour.description,
-          type_document: documentMisAJour.type_document,
-          type_document_label: obtenirLabelTypeDocument(documentMisAJour.type_document),
+          categorie: {
+            id: documentMisAJour.categorie.id,
+            nom: documentMisAJour.categorie.nom,
+            description: documentMisAJour.categorie.description
+          },
           url_cloudinary: documentMisAJour.url_cloudinary,
           taille_fichier: documentMisAJour.taille_fichier,
           nom_fichier_original: documentMisAJour.nom_fichier_original,
@@ -409,7 +466,7 @@ class TexteOfficielController {
           details: {
             document_id: id,
             titre: documentExistant.titre,
-            type_document: documentExistant.type_document
+            categorie_id: documentExistant.id_categorie
           },
           adresse_ip: req.ip,
           agent_utilisateur: req.get('User-Agent')
@@ -454,12 +511,28 @@ class TexteOfficielController {
         });
       }
 
-      // Compter les documents par type
-      const statistiquesParType = await prisma.texteOfficiel.groupBy({
-        by: ['type_document'],
+      // Compter les documents par catégorie
+      const statistiquesParCategorie = await prisma.texteOfficiel.groupBy({
+        by: ['id_categorie'],
         where: { est_actif: true },
         _count: true
       });
+
+      // Récupérer les détails des catégories
+      const categoriesAvecDetails = await Promise.all(
+        statistiquesParCategorie.map(async (stat) => {
+          const categorie = await prisma.categorieTexteOfficiel.findUnique({
+            where: { id: stat.id_categorie },
+            select: { id: true, nom: true, description: true }
+          });
+          return {
+            categorie_id: stat.id_categorie,
+            categorie_nom: categorie?.nom || 'Catégorie supprimée',
+            categorie_description: categorie?.description,
+            count: stat._count
+          };
+        })
+      );
 
       // Compter le total de documents
       const totalDocuments = await prisma.texteOfficiel.count({
@@ -476,11 +549,7 @@ class TexteOfficielController {
         statistiques: {
           total_documents_actifs: totalDocuments,
           total_documents_inactifs: documentsInactifs,
-          par_type: statistiquesParType.map(stat => ({
-            type_document: stat.type_document,
-            type_document_label: obtenirLabelTypeDocument(stat.type_document),
-            count: stat._count
-          }))
+          par_categorie: categoriesAvecDetails
         }
       });
 

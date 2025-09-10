@@ -1,8 +1,5 @@
 const { z } = require('zod');
 
-// Types de documents officiels disponibles
-const TYPES_DOCUMENTS = ['PV_REUNION', 'COMPTE_RENDU', 'DECISION', 'REGLEMENT_INTERIEUR'];
-
 // Schema pour créer/uploader un texte officiel
 const creerTexteOfficielSchema = z.object({
   titre: z.string()
@@ -15,9 +12,10 @@ const creerTexteOfficielSchema = z.object({
     .trim()
     .optional(),
 
-  type_document: z.enum(TYPES_DOCUMENTS, {
-    message: 'Type de document invalide. Types autorisés: PV_REUNION, COMPTE_RENDU, DECISION, REGLEMENT_INTERIEUR'
-  }),
+  // OBLIGATOIRE: Dynamic category
+  id_categorie: z.number()
+    .int('L\'ID de catégorie doit être un entier')
+    .positive('L\'ID de catégorie doit être positif'),
 
   url_cloudinary: z.string()
     .url('URL Cloudinary invalide')
@@ -51,13 +49,23 @@ const mettreAJourTexteOfficielSchema = z.object({
     .trim()
     .optional(),
 
+  // Support for changing category
+  id_categorie: z.number()
+    .int('L\'ID de catégorie doit être un entier')
+    .positive('L\'ID de catégorie doit être positif')
+    .optional(),
+
   est_actif: z.boolean()
     .optional()
 });
 
 // Schema pour les filtres de recherche
 const filtrerTextesOfficielsSchema = z.object({
-  type_document: z.enum(TYPES_DOCUMENTS).optional(),
+  // Filter by dynamic category
+  id_categorie: z.coerce.number()
+    .int('L\'ID de catégorie doit être un entier')
+    .positive('L\'ID de catégorie doit être positif')
+    .optional(),
   
   page: z.coerce.number()
     .int('Le numéro de page doit être un entier')
@@ -83,22 +91,9 @@ const idDocumentSchema = z.object({
     .positive('L\'ID doit être positif')
 });
 
-// Fonction utilitaire pour obtenir le label français d'un type de document
-const obtenirLabelTypeDocument = (type) => {
-  const labels = {
-    'PV_REUNION': 'PV de Réunion',
-    'COMPTE_RENDU': 'Compte-Rendu',
-    'DECISION': 'Décision',
-    'REGLEMENT_INTERIEUR': 'Règlement Intérieur'
-  };
-  return labels[type] || type;
-};
-
 module.exports = {
   creerTexteOfficielSchema,
   mettreAJourTexteOfficielSchema,
   filtrerTextesOfficielsSchema,
-  idDocumentSchema,
-  obtenirLabelTypeDocument,
-  TYPES_DOCUMENTS
+  idDocumentSchema
 };
