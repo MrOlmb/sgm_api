@@ -9,7 +9,6 @@ datasource db {
 
 model Utilisateur {
   id                     Int       @id @default(autoincrement())
-  // clerkId                String?   @unique // ID Clerk pour sync - COMMENTÉ
   numero_adhesion        String?   @unique // Numéro d'adhésion autogénéré
   
   // Informations personnelles

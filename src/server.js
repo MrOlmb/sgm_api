@@ -10,7 +10,7 @@ const server = app.listen(PORT, HOST, () => {
   logger.info(`📊 Health check: http://${HOST}:${PORT}/api/health`);
   logger.info(`📖 API info: http://${HOST}:${PORT}/api`);
   
-  // Log important configuration
+  // Log important configuration informations
   logger.info('Configuration:', {
     port: PORT,
     host: HOST,
