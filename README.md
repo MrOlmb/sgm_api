@@ -25,7 +25,7 @@ Backend API for **Association des Gabonais du Congo** - Member Management System
 
 3. **Start development server:**
    ```bash
-   # Option 1: With Docker (recommended)
+   # Option 1: With Docker (recommended) , you can also spin up a pgadmin image to monitor your database more easily
    npm run docker:up
    
    # Option 2: Local development
