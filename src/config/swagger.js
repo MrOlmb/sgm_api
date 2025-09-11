@@ -210,11 +210,11 @@ const options = {
         },
         CreerTexteOfficielRequest: {
           type: 'object',
-          required: ['titre', 'type_document', 'url_cloudinary', 'cloudinary_id', 'nom_fichier_original'],
+          required: ['titre', 'id_categorie', 'url_cloudinary', 'cloudinary_id', 'nom_fichier_original'],
           properties: {
             titre: { type: 'string', minLength: 5, maxLength: 200, example: 'PV Assemblée Générale 2025' },
             description: { type: 'string', maxLength: 1000, example: 'Procès-verbal de l\'assemblée générale ordinaire du 15 janvier 2025' },
-            type_document: { type: 'string', enum: ['PV_REUNION', 'COMPTE_RENDU', 'DECISION', 'REGLEMENT_INTERIEUR'], example: 'PV_REUNION' },
+            id_categorie: { type: 'integer', example: 1, description: 'ID de la catégorie de texte officiel (doit exister et être active)' },
             url_cloudinary: { type: 'string', format: 'url', example: 'https://res.cloudinary.com/sgm/raw/upload/v123456789/documents/pv-ag-2025.pdf' },
             cloudinary_id: { type: 'string', example: 'documents/pv-ag-2025' },
             taille_fichier: { type: 'integer', example: 2048576, description: 'Taille en bytes' },
@@ -226,6 +226,7 @@ const options = {
           properties: {
             titre: { type: 'string', minLength: 5, maxLength: 200, example: 'PV Assemblée Générale 2025 - Modifié' },
             description: { type: 'string', maxLength: 1000, example: 'Description mise à jour' },
+            id_categorie: { type: 'integer', example: 2, description: 'ID de la nouvelle catégorie (optionnel)' },
             est_actif: { type: 'boolean', example: true }
           }
         },
@@ -239,8 +240,16 @@ const options = {
                 id: { type: 'integer', example: 1 },
                 titre: { type: 'string', example: 'PV Assemblée Générale 2025' },
                 description: { type: 'string', example: 'Procès-verbal de l\'assemblée générale ordinaire' },
-                type_document: { type: 'string', example: 'PV_REUNION' },
-                type_document_label: { type: 'string', example: 'PV de Réunion' },
+                id_categorie: { type: 'integer', example: 1 },
+                categorie: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer', example: 1 },
+                    nom: { type: 'string', example: 'PV Réunion' },
+                    description: { type: 'string', example: 'Procès-verbaux des réunions' },
+                    est_actif: { type: 'boolean', example: true }
+                  }
+                },
                 url_cloudinary: { type: 'string', example: 'https://res.cloudinary.com/sgm/raw/upload/v123456789/documents/pv-ag-2025.pdf' },
                 taille_fichier: { type: 'integer', example: 2048576 },
                 nom_fichier_original: { type: 'string', example: 'PV-AG-2025.pdf' },
@@ -271,8 +280,16 @@ const options = {
                   id: { type: 'integer', example: 1 },
                   titre: { type: 'string', example: 'PV Assemblée Générale 2025' },
                   description: { type: 'string', example: 'Procès-verbal...' },
-                  type_document: { type: 'string', example: 'PV_REUNION' },
-                  type_document_label: { type: 'string', example: 'PV de Réunion' },
+                  id_categorie: { type: 'integer', example: 1 },
+                  categorie: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer', example: 1 },
+                      nom: { type: 'string', example: 'PV Réunion' },
+                      description: { type: 'string', example: 'Procès-verbaux des réunions' },
+                      est_actif: { type: 'boolean', example: true }
+                    }
+                  },
                   url_cloudinary: { type: 'string', example: 'https://res.cloudinary.com/...' },
                   taille_fichier: { type: 'integer', example: 2048576 },
                   nom_fichier_original: { type: 'string', example: 'PV-AG-2025.pdf' },
@@ -293,13 +310,14 @@ const options = {
               properties: {
                 total_documents_actifs: { type: 'integer', example: 25 },
                 total_documents_inactifs: { type: 'integer', example: 3 },
-                par_type: {
+                par_categorie: {
                   type: 'array',
                   items: {
                     type: 'object',
                     properties: {
-                      type_document: { type: 'string', example: 'PV_REUNION' },
-                      type_document_label: { type: 'string', example: 'PV de Réunion' },
+                      id_categorie: { type: 'integer', example: 1 },
+                      nom_categorie: { type: 'string', example: 'PV Réunion' },
+                      description_categorie: { type: 'string', example: 'Procès-verbaux des réunions' },
                       count: { type: 'integer', example: 8 }
                     }
                   }
@@ -307,7 +325,110 @@ const options = {
               }
             }
           }
-        }
+        },
+        CreerCategorieRequest: {
+          type: 'object',
+          required: ['nom'],
+          properties: {
+            nom: { type: 'string', minLength: 2, maxLength: 100, example: 'PV Réunion', description: 'Nom de la catégorie' },
+            description: { type: 'string', maxLength: 500, example: 'Procès-verbaux des réunions de l\'association', description: 'Description de la catégorie (optionnel)' }
+          }
+        },
+        ModifierCategorieRequest: {
+          type: 'object',
+          properties: {
+            nom: { type: 'string', minLength: 2, maxLength: 100, example: 'PV Réunion Modifié', description: 'Nouveau nom de la catégorie' },
+            description: { type: 'string', maxLength: 500, example: 'Nouvelle description', description: 'Nouvelle description de la catégorie' },
+            est_actif: { type: 'boolean', example: true, description: 'Statut de la catégorie' }
+          }
+        },
+        CategorieResponse: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Catégorie récupérée' },
+            categorie: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer', example: 1 },
+                nom: { type: 'string', example: 'PV Réunion' },
+                description: { type: 'string', example: 'Procès-verbaux des réunions' },
+                est_actif: { type: 'boolean', example: true },
+                cree_le: { type: 'string', format: 'date-time', example: '2025-01-15T10:30:00Z' },
+                modifie_le: { type: 'string', format: 'date-time', example: '2025-01-15T10:30:00Z' },
+                createur: {
+                  type: 'object',
+                  properties: {
+                    nom_complet: { type: 'string', example: 'Marie Claire SECRETAIRE' },
+                    nom_utilisateur: { type: 'string', example: 'marie.secretaire' }
+                  }
+                },
+                nombre_textes: { type: 'integer', example: 5, description: 'Nombre de textes officiels dans cette catégorie' }
+              }
+            }
+          }
+        },
+        ListeCategoriesResponse: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Liste des catégories récupérée' },
+            donnees: {
+              type: 'object',
+              properties: {
+                categories: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer', example: 1 },
+                      nom: { type: 'string', example: 'PV Réunion' },
+                      description: { type: 'string', example: 'Procès-verbaux des réunions' },
+                      est_actif: { type: 'boolean', example: true },
+                      cree_le: { type: 'string', format: 'date-time' },
+                      modifie_le: { type: 'string', format: 'date-time' },
+                      createur: {
+                        type: 'object',
+                        properties: {
+                          nom_complet: { type: 'string', example: 'Marie Claire SECRETAIRE' },
+                          nom_utilisateur: { type: 'string', example: 'marie.secretaire' }
+                        }
+                      },
+                      nombre_textes: { type: 'integer', example: 5 }
+                    }
+                  }
+                },
+                pagination: { $ref: '#/components/schemas/Pagination' }
+              }
+            }
+          }
+        },
+        StatistiquesCategoriesResponse: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Statistiques des catégories récupérées' },
+            statistiques: {
+              type: 'object',
+              properties: {
+                total_categories: { type: 'integer', example: 8 },
+                categories_actives: { type: 'integer', example: 6 },
+                categories_inactives: { type: 'integer', example: 2 },
+                categories_avec_textes: { type: 'integer', example: 5 },
+                categories_sans_textes: { type: 'integer', example: 3 },
+                top_categories: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer', example: 1 },
+                      nom: { type: 'string', example: 'PV Réunion' },
+                      description: { type: 'string', example: 'Procès-verbaux des réunions' },
+                      nombre_textes: { type: 'integer', example: 8 }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
       }
     },
     security: [
@@ -342,7 +463,11 @@ const options = {
       },
       {
         name: 'Textes Officiels',
-        description: 'Gestion des documents officiels (PV, Comptes-rendus, Décisions, Règlements)'
+        description: 'Gestion des documents officiels avec catégories dynamiques'
+      },
+      {
+        name: 'Categories Texte Officiel',
+        description: 'Gestion des catégories de textes officiels (Secrétaire et Président uniquement)'
       }
     ]
   },

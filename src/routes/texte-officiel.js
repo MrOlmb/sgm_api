@@ -53,11 +53,10 @@ router.post('/', authentifierJWT, generalLimiter, texteOfficielController.creerT
  *       - BearerAuth: []
  *     parameters:
  *       - in: query
- *         name: type_document
+ *         name: id_categorie
  *         schema:
- *           type: string
- *           enum: [PV_REUNION, COMPTE_RENDU, DECISION, REGLEMENT_INTERIEUR]
- *         description: Filtrer par type de document
+ *           type: integer
+ *         description: Filtrer par ID de catégorie
  *       - in: query
  *         name: page
  *         schema:
