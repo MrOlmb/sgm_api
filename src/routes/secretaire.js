@@ -1833,12 +1833,17 @@ router.get('/formulaires-admin',
  *                       example: "APPROUVE"
  *                     numero_adhesion:
  *                       type: string
- *                       description: Numéro d'adhésion généré lors de l'approbation
- *                       example: "N°001/AGCO/A/2025"
+ *                       description: Numéro d'adhésion généré lors de l'approbation (P pour Président, SG pour Secrétaire Général)
+ *                       example: "N°001/AGCO/P/2025"
  *                     code_formulaire:
  *                       type: string
- *                       description: Code de formulaire généré lors de l'approbation
- *                       example: "N°001/AGCO/A/2025"
+ *                       description: Code de formulaire généré lors de l'approbation (P pour Président, SG pour Secrétaire Général)
+ *                       example: "N°001/AGCO/P/2025"
+ *                     url_formulaire_final:
+ *                       type: string
+ *                       format: uri
+ *                       description: URL du formulaire final avec signatures sauvegardé
+ *                       example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/formulaire_final_approuve_admin_1.pdf"
  *                     date_approbation:
  *                       type: string
  *                       format: date-time
@@ -1852,6 +1857,7 @@ router.get('/formulaires-admin',
  *                     - "🏷️ Code de formulaire généré"
  *                     - "📄 Numéro d'adhésion attribué"
  *                     - "📋 Informations personnelles validées"
+ *                     - "📄 Formulaire final avec signatures sauvegardé"
  *                     - "🔐 Accès à l'application maintenu (pas d'impact sur la connexion)"
  *                     - "📧 Notification envoyée à l'administrateur"
  *                     - "🎴 Cartes de membre (recto/verso) ajoutées"

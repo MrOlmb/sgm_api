@@ -2243,21 +2243,24 @@ class ControleurSecretaire {
         }
       }
 
+      // Déterminer le préfixe basé sur le rôle
+      const prefixeRole = formulaireAdmin.utilisateur.role === 'PRESIDENT' ? 'P' : 'SG';
+
       // Générer un code de formulaire pour l'administrateur
       let codeFormulaire = formulaireAdmin.utilisateur.code_formulaire;
       if (!codeFormulaire) {
         const anneeCourante = new Date().getFullYear();
         const nombreApprouves = await prisma.utilisateur.count({
-          where: { statut: 'APPROUVE', role: { in: ['PRESIDENT', 'SECRETAIRE_GENERALE'] } }
+          where: { statut: 'APPROUVE', role: formulaireAdmin.utilisateur.role }
         });
-        codeFormulaire = `N°${String(nombreApprouves + 1).padStart(3, '0')}/AGCO/A/${anneeCourante}`;
+        codeFormulaire = `N°${String(nombreApprouves + 1).padStart(3, '0')}/AGCO/${prefixeRole}/${anneeCourante}`;
       }
 
       // Générer le numéro d'adhésion lors de l'approbation
       const compteurApprouves = await prisma.utilisateur.count({
-        where: { statut: 'APPROUVE', role: { in: ['PRESIDENT', 'SECRETAIRE_GENERALE'] } }
+        where: { statut: 'APPROUVE', role: formulaireAdmin.utilisateur.role }
       });
-      const numeroAdhesion = `N°${String(compteurApprouves + 1).padStart(3, '0')}/AGCO/A/${new Date().getFullYear()}`;
+      const numeroAdhesion = `N°${String(compteurApprouves + 1).padStart(3, '0')}/AGCO/${prefixeRole}/${new Date().getFullYear()}`;
 
       // Prepare update data
       const updateData = {
@@ -2276,10 +2279,43 @@ class ControleurSecretaire {
         updateData.carte_generee_par = idSecretaire;
       }
 
-      // Approuver l'utilisateur administrateur (mettre à jour son statut)
-      const utilisateurApprouve = await prisma.utilisateur.update({
-        where: { id: formulaireAdmin.utilisateur.id },
-        data: updateData
+      // Approuver l'utilisateur administrateur dans une transaction atomique
+        logger.info(`Mise à jour du statut administrateur ${formulaireAdmin.utilisateur.id} vers APPROUVE`, {
+        admin_id: formulaireAdmin.utilisateur.id,
+        admin_role: formulaireAdmin.utilisateur.role,
+        update_data: updateData
+      });
+      
+      const utilisateurApprouve = await prisma.$transaction(async (tx) => {
+        // Mettre à jour le statut de l'utilisateur administrateur
+        const utilisateurMisAJour = await tx.utilisateur.update({
+          where: { id: formulaireAdmin.utilisateur.id },
+          data: updateData
+        });
+        
+        logger.info(`Statut administrateur mis à jour avec succès`, {
+          admin_id: utilisateurMisAJour.id,
+          nouveau_statut: utilisateurMisAJour.statut,
+          numero_adhesion: utilisateurMisAJour.numero_adhesion
+        });
+
+        // Mettre à jour le formulaire d'adhésion avec le PDF final
+        logger.info(`Mise à jour synchrone du PDF final pour administrateur ${formulaireAdmin.utilisateur.id}`);
+        
+        await tx.formulaireAdhesion.updateMany({
+          where: { 
+            id_utilisateur: formulaireAdmin.utilisateur.id,
+            est_version_active: true
+          },
+          data: {
+            url_image_formulaire: url_formulaire_final,
+            est_version_active: true
+          }
+        });
+        
+        logger.info(`PDF final synchrone mis à jour pour administrateur ${formulaireAdmin.utilisateur.id}`);
+        
+        return utilisateurMisAJour;
       });
 
       // Journal d'audit
@@ -2295,6 +2331,7 @@ class ControleurSecretaire {
             type_formulaire: 'ADMIN_PERSONNEL',
             numero_adhesion: numeroAdhesion,
             code_formulaire: codeFormulaire,
+            url_formulaire_final: url_formulaire_final,
             commentaire: commentaire || null,
             cartes_membre_ajoutees: !!(carte_recto_url && carte_verso_url),
             carte_recto_url: carte_recto_url || null,
@@ -2320,6 +2357,7 @@ class ControleurSecretaire {
           statut: utilisateurApprouve.statut,
           numero_adhesion: numeroAdhesion,
           code_formulaire: codeFormulaire,
+          url_formulaire_final: url_formulaire_final,
           date_approbation: utilisateurApprouve.modifie_le
         },
         actions_effectuees: [
@@ -2327,6 +2365,7 @@ class ControleurSecretaire {
           '🏷️ Code de formulaire généré',
           '📄 Numéro d\'adhésion attribué',
           '📋 Informations personnelles validées',
+          '📄 Formulaire final avec signatures sauvegardé',
           '🔐 Accès à l\'application maintenu (pas d\'impact sur la connexion)',
           '📧 Notification envoyée à l\'administrateur',
           ...(carte_recto_url && carte_verso_url ? ['🎴 Cartes de membre (recto/verso) ajoutées'] : [])
