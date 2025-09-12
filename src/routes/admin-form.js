@@ -258,7 +258,7 @@ const verifierRoleAdmin = verifierRole('PRESIDENT', 'SECRETAIRE_GENERALE');
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/formulaire-personnel', generalLimiter, authentifierJWT, verifierRoleAdmin, adminFormController.soumettreFormulairePersonnel);
+router.post('/formulaire-personnel', authentifierJWT, verifierRoleAdmin, generalLimiter, adminFormController.soumettreFormulairePersonnel);
 
 /**
  * @swagger

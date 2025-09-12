@@ -43,7 +43,7 @@ const verifierRoleAdmin = verifierRole('PRESIDENT', 'SECRETAIRE_GENERALE');
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', generalLimiter, authentifierJWT, verifierRoleAdmin, texteOfficielController.creerTexteOfficiel);
+router.post('/', authentifierJWT, verifierRoleAdmin, generalLimiter, texteOfficielController.creerTexteOfficiel);
 
 /**
  * @swagger
@@ -96,7 +96,7 @@ router.post('/', generalLimiter, authentifierJWT, verifierRoleAdmin, texteOffici
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', generalLimiter, authentifierJWT, texteOfficielController.listerTextesOfficiels);
+router.get('/', authentifierJWT, generalLimiter, texteOfficielController.listerTextesOfficiels);
 
 /**
  * @swagger
@@ -121,7 +121,7 @@ router.get('/', generalLimiter, authentifierJWT, texteOfficielController.listerT
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/statistiques', generalLimiter, authentifierJWT, verifierRoleAdmin, texteOfficielController.obtenirStatistiques);
+router.get('/statistiques', authentifierJWT, verifierRoleAdmin, generalLimiter, texteOfficielController.obtenirStatistiques);
 
 /**
  * @swagger
@@ -153,7 +153,7 @@ router.get('/statistiques', generalLimiter, authentifierJWT, verifierRoleAdmin, 
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id', generalLimiter, authentifierJWT, texteOfficielController.obtenirTexteOfficiel);
+router.get('/:id', authentifierJWT, generalLimiter, texteOfficielController.obtenirTexteOfficiel);
 
 /**
  * @swagger
@@ -203,7 +203,7 @@ router.get('/:id', generalLimiter, authentifierJWT, texteOfficielController.obte
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', generalLimiter, authentifierJWT, verifierRoleAdmin, texteOfficielController.mettreAJourTexteOfficiel);
+router.put('/:id', authentifierJWT, verifierRoleAdmin, generalLimiter, texteOfficielController.mettreAJourTexteOfficiel);
 
 /**
  * @swagger
@@ -245,6 +245,6 @@ router.put('/:id', generalLimiter, authentifierJWT, verifierRoleAdmin, texteOffi
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/:id', generalLimiter, authentifierJWT, verifierRoleAdmin, texteOfficielController.supprimerTexteOfficiel);
+router.delete('/:id', authentifierJWT, verifierRoleAdmin, generalLimiter, texteOfficielController.supprimerTexteOfficiel);
 
 module.exports = router;

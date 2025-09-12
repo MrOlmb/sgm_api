@@ -126,15 +126,15 @@ class MembreController {
         throw error;
       }
 
-      // Vérifier que le membre est approuvé
-      if (utilisateur.statut !== 'APPROUVE') {
+      // Vérifier que le membre a soumis son formulaire (plus permissif)
+      if (!utilisateur.a_soumis_formulaire) {
         const businessError = ErrorHandler.createBusinessError(
           'Carte de membre non disponible',
-          'ADHESION_NON_APPROUVEE',
+          'FORMULAIRE_NON_SOUMIS',
           404,
           [
-            'Votre demande d\'adhésion doit d\'abord être approuvée',
-            'Contactez un secrétaire pour connaître le statut de votre demande'
+            'Vous devez d\'abord soumettre votre formulaire d\'adhésion',
+            'Utilisez l\'endpoint /api/adhesion/soumettre pour soumettre votre formulaire'
           ]
         );
         const context = {
@@ -256,9 +256,9 @@ class MembreController {
         throw error;
       }
 
-      // Vérifier que l'utilisateur est approuvé ET a soumis son formulaire
-      if (utilisateurConnecte.statut !== 'APPROUVE' || !utilisateurConnecte.a_soumis_formulaire) {
-        const error = new Error('Accès restreint. Seuls les membres avec une adhésion validée peuvent consulter l\'annuaire des membres.');
+      // Vérifier que l'utilisateur a soumis son formulaire (plus permissif)
+      if (!utilisateurConnecte.a_soumis_formulaire) {
+        const error = new Error('Accès restreint. Vous devez d\'abord soumettre votre formulaire d\'adhésion pour consulter l\'annuaire des membres.');
         error.status = 403;
         throw error;
       }
@@ -408,8 +408,9 @@ class MembreController {
         throw error;
       }
 
-      if (utilisateur.statut !== 'APPROUVE') {
-        const error = new Error('Carte de membre non disponible');
+      // Vérifier que le membre a soumis son formulaire (plus permissif)
+      if (!utilisateur.a_soumis_formulaire) {
+        const error = new Error('Carte de membre non disponible. Vous devez d\'abord soumettre votre formulaire d\'adhésion.');
         error.status = 404;
         throw error;
       }
