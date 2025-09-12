@@ -2237,9 +2237,28 @@ class ControleurSecretaire {
         }
       }
 
+      // Générer un code de formulaire pour l'administrateur
+      let codeFormulaire = formulaireAdmin.utilisateur.code_formulaire;
+      if (!codeFormulaire) {
+        const anneeCourante = new Date().getFullYear();
+        const nombreApprouves = await prisma.utilisateur.count({
+          where: { statut: 'APPROUVE', role: { in: ['PRESIDENT', 'SECRETAIRE_GENERALE'] } }
+        });
+        codeFormulaire = `N°${String(nombreApprouves + 1).padStart(3, '0')}/AGCO/A/${anneeCourante}`;
+      }
+
+      // Générer le numéro d'adhésion lors de l'approbation
+      const compteurApprouves = await prisma.utilisateur.count({
+        where: { statut: 'APPROUVE', role: { in: ['PRESIDENT', 'SECRETAIRE_GENERALE'] } }
+      });
+      const numeroAdhesion = `N°${String(compteurApprouves + 1).padStart(3, '0')}/AGCO/A/${new Date().getFullYear()}`;
+
       // Prepare update data
       const updateData = {
         statut: 'APPROUVE',
+        numero_adhesion: numeroAdhesion, // Attribution du numéro lors de l'approbation
+        code_formulaire: codeFormulaire,
+        carte_emise_le: new Date(), // Date d'émission de la carte
         modifie_le: new Date()
       };
 
@@ -2268,6 +2287,8 @@ class ControleurSecretaire {
             admin_role: formulaireAdmin.utilisateur.role,
             admin_nom: `${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`,
             type_formulaire: 'ADMIN_PERSONNEL',
+            numero_adhesion: numeroAdhesion,
+            code_formulaire: codeFormulaire,
             commentaire: commentaire || null,
             cartes_membre_ajoutees: !!(carte_recto_url && carte_verso_url),
             carte_recto_url: carte_recto_url || null,
@@ -2291,10 +2312,14 @@ class ControleurSecretaire {
             role: formulaireAdmin.utilisateur.role
           },
           statut: utilisateurApprouve.statut,
+          numero_adhesion: numeroAdhesion,
+          code_formulaire: codeFormulaire,
           date_approbation: utilisateurApprouve.modifie_le
         },
         actions_effectuees: [
           '✅ Formulaire personnel administrateur approuvé',
+          '🏷️ Code de formulaire généré',
+          '📄 Numéro d\'adhésion attribué',
           '📋 Informations personnelles validées',
           '🔐 Accès à l\'application maintenu (pas d\'impact sur la connexion)',
           '📧 Notification envoyée à l\'administrateur',

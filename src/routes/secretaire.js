@@ -1831,6 +1831,14 @@ router.get('/formulaires-admin',
  *                     statut:
  *                       type: string
  *                       example: "APPROUVE"
+ *                     numero_adhesion:
+ *                       type: string
+ *                       description: Numéro d'adhésion généré lors de l'approbation
+ *                       example: "N°001/AGCO/A/2025"
+ *                     code_formulaire:
+ *                       type: string
+ *                       description: Code de formulaire généré lors de l'approbation
+ *                       example: "N°001/AGCO/A/2025"
  *                     date_approbation:
  *                       type: string
  *                       format: date-time
@@ -1841,6 +1849,8 @@ router.get('/formulaires-admin',
  *                     type: string
  *                   example:
  *                     - "✅ Formulaire personnel administrateur approuvé"
+ *                     - "🏷️ Code de formulaire généré"
+ *                     - "📄 Numéro d'adhésion attribué"
  *                     - "📋 Informations personnelles validées"
  *                     - "🔐 Accès à l'application maintenu (pas d'impact sur la connexion)"
  *                     - "📧 Notification envoyée à l'administrateur"
