@@ -306,14 +306,20 @@ class AdminFormController {
         });
       }
 
-      // Pour les formulaires admin, déterminer le statut basé sur l'existence du formulaire
+      // Pour les formulaires admin, utiliser le statut de l'utilisateur
       let statut = 'NON_SOUMIS';
       let detailsRejet = null;
 
       if (formulairePersonnel) {
-        // Pour les admins, le formulaire est toujours considéré comme "EN_ATTENTE" 
-        // car il n'affecte pas leur capacité de connexion
-        statut = 'EN_ATTENTE';
+        // Récupérer le statut de l'utilisateur administrateur
+        const utilisateurAdmin = await prisma.utilisateur.findUnique({
+          where: { id: idAdmin },
+          select: { statut: true }
+        });
+        
+        if (utilisateurAdmin) {
+          statut = utilisateurAdmin.statut;
+        }
       }
 
       res.json({

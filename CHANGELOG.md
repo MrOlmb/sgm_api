@@ -5,6 +5,29 @@ All notable changes to the SGM Backend API will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-09-12
+
+### 🔧 Bug Fixes & Improvements
+
+#### 🏛️ Admin Form Status Management Fix
+- **Fixed critical bug** in admin form status handling where system was trying to access non-existent `statut` field on `FormulaireAdhesion` model
+- **Corrected status management** to use `utilisateur.statut` field instead of form-level status
+- **Updated seed data** - PRESIDENT and SECRETAIRE_GENERALE users now start with `EN_ATTENTE` status instead of `APPROUVE`
+- **Fixed admin form listing endpoint** (`/api/secretaire/formulaires-admin`) to properly return user status
+- **Corrected approval/rejection logic** to update `utilisateur.statut` when forms are processed
+- **Improved filtering and search** in admin forms listing to work with user-level status
+
+#### 🎯 Technical Improvements
+- **Removed incorrect form status logic** from admin-form controller
+- **Updated database queries** to include `statut` field in user selection
+- **Fixed response objects** to use correct variable names and data sources
+- **Enhanced error handling** with proper status validation
+
+### 📋 Files Modified
+- `prisma/seed-production.js` - Updated admin user status to EN_ATTENTE
+- `src/controllers/admin-form.controller.js` - Fixed status retrieval logic
+- `src/controllers/secretaire.controller.js` - Fixed approval/rejection and listing logic
+
 ## [1.1.0] - 2025-08-21
 
 ### 🎉 Major Features Added

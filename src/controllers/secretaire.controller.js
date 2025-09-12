@@ -2037,24 +2037,26 @@ class ControleurSecretaire {
       const { page = 1, limite = 20, filtre = 'tous', recherche = '' } = req.query;
       const offset = (parseInt(page) - 1) * parseInt(limite);
 
-      // Conditions de filtrage
+      // Conditions de filtrage par statut utilisateur
       let conditionsFiltre = {};
       if (filtre === 'en_attente') {
-        conditionsFiltre.statut = 'EN_ATTENTE';
+        conditionsFiltre.utilisateur = { statut: 'EN_ATTENTE' };
       } else if (filtre === 'approuves') {
-        conditionsFiltre.statut = 'APPROUVE';
+        conditionsFiltre.utilisateur = { statut: 'APPROUVE' };
       } else if (filtre === 'rejetes') {
-        conditionsFiltre.statut = 'REJETE';
+        conditionsFiltre.utilisateur = { statut: 'REJETE' };
       }
 
-      // Conditions de recherche
+      // Conditions de recherche dans les champs utilisateur
       let conditionsRecherche = {};
       if (recherche) {
-        conditionsRecherche.OR = [
-          { prenoms: { contains: recherche, mode: 'insensitive' } },
-          { nom: { contains: recherche, mode: 'insensitive' } },
-          { nom_utilisateur: { contains: recherche, mode: 'insensitive' } }
-        ];
+        conditionsRecherche.utilisateur = {
+          OR: [
+            { prenoms: { contains: recherche, mode: 'insensitive' } },
+            { nom: { contains: recherche, mode: 'insensitive' } },
+            { nom_utilisateur: { contains: recherche, mode: 'insensitive' } }
+          ]
+        };
       }
 
       // Récupérer les formulaires d'administrateurs
@@ -2079,7 +2081,8 @@ class ControleurSecretaire {
               nom_utilisateur: true,
               role: true,
               email: true,
-              telephone: true
+              telephone: true,
+              statut: true
             }
           }
         },
@@ -2119,7 +2122,7 @@ class ControleurSecretaire {
               email: formulaire.utilisateur.email,
               telephone: formulaire.utilisateur.telephone
             },
-            statut: formulaire.statut,
+            statut: formulaire.utilisateur.statut,
             date_soumission: formulaire.cree_le,
             derniere_mise_a_jour: formulaire.modifie_le,
             url_fiche_formulaire: formulaire.url_image_formulaire,
@@ -2170,7 +2173,8 @@ class ControleurSecretaire {
               nom: true,
               nom_utilisateur: true,
               role: true,
-              email: true
+              email: true,
+              statut: true
             }
           }
         }
@@ -2191,17 +2195,17 @@ class ControleurSecretaire {
         });
       }
 
-      // Vérifier que le formulaire est en attente
-      if (formulaireAdmin.statut !== 'EN_ATTENTE') {
+      // Vérifier que l'utilisateur administrateur est en attente
+      if (formulaireAdmin.utilisateur.statut !== 'EN_ATTENTE') {
         return res.status(400).json({
-          erreur: 'Ce formulaire n\'est pas en attente d\'approbation',
-          code: 'FORMULAIRE_NON_EN_ATTENTE'
+          erreur: 'Cet administrateur n\'est pas en attente d\'approbation',
+          code: 'ADMIN_NON_EN_ATTENTE'
         });
       }
 
-      // Approuver le formulaire (sans affecter la capacité de connexion)
-      const formulaireApprouve = await prisma.formulaireAdhesion.update({
-        where: { id: parseInt(id_formulaire) },
+      // Approuver l'utilisateur administrateur (mettre à jour son statut)
+      const utilisateurApprouve = await prisma.utilisateur.update({
+        where: { id: formulaireAdmin.utilisateur.id },
         data: {
           statut: 'APPROUVE',
           modifie_le: new Date()
@@ -2230,15 +2234,15 @@ class ControleurSecretaire {
       res.json({
         message: 'Formulaire personnel administrateur approuvé avec succès',
         formulaire: {
-          id: formulaireApprouve.id,
+          id: formulaireAdmin.id,
           type: 'ADMIN_PERSONNEL',
           utilisateur: {
             id: formulaireAdmin.utilisateur.id,
             nom_complet: `${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`,
             role: formulaireAdmin.utilisateur.role
           },
-          statut: formulaireApprouve.statut,
-          date_approbation: formulaireApprouve.modifie_le
+          statut: utilisateurApprouve.statut,
+          date_approbation: utilisateurApprouve.modifie_le
         },
         actions_effectuees: [
           '✅ Formulaire personnel administrateur approuvé',
@@ -2288,7 +2292,8 @@ class ControleurSecretaire {
               nom: true,
               nom_utilisateur: true,
               role: true,
-              email: true
+              email: true,
+              statut: true
             }
           }
         }
@@ -2309,19 +2314,22 @@ class ControleurSecretaire {
         });
       }
 
-      // Vérifier que le formulaire est en attente
-      if (formulaireAdmin.statut !== 'EN_ATTENTE') {
+      // Vérifier que l'utilisateur administrateur est en attente
+      if (formulaireAdmin.utilisateur.statut !== 'EN_ATTENTE') {
         return res.status(400).json({
-          erreur: 'Ce formulaire n\'est pas en attente d\'approbation',
-          code: 'FORMULAIRE_NON_EN_ATTENTE'
+          erreur: 'Cet administrateur n\'est pas en attente d\'approbation',
+          code: 'ADMIN_NON_EN_ATTENTE'
         });
       }
 
-      // Rejeter le formulaire (sans affecter la capacité de connexion)
-      const formulaireRejete = await prisma.formulaireAdhesion.update({
-        where: { id: parseInt(id_formulaire) },
+      // Rejeter l'utilisateur administrateur (mettre à jour son statut)
+      const utilisateurRejete = await prisma.utilisateur.update({
+        where: { id: formulaireAdmin.utilisateur.id },
         data: {
           statut: 'REJETE',
+          raison_rejet: raison,
+          rejete_le: new Date(),
+          rejete_par: idSecretaire,
           modifie_le: new Date()
         }
       });
@@ -2351,15 +2359,15 @@ class ControleurSecretaire {
       res.json({
         message: 'Formulaire personnel administrateur rejeté',
         formulaire: {
-          id: formulaireRejete.id,
+          id: formulaireAdmin.id,
           type: 'ADMIN_PERSONNEL',
           utilisateur: {
             id: formulaireAdmin.utilisateur.id,
             nom_complet: `${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`,
             role: formulaireAdmin.utilisateur.role
           },
-          statut: formulaireRejete.statut,
-          date_rejet: formulaireRejete.modifie_le
+          statut: utilisateurRejete.statut,
+          date_rejet: utilisateurRejete.modifie_le
         },
         rejet: {
           raison_principale: raison,

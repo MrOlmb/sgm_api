@@ -27,7 +27,7 @@ async function main() {
       date_entree_congo: new Date(2000, 0, 1), // 01-01-2000 en format français
       employeur_ecole: 'Les Ateliers Reunis',
       date_emission_piece: new Date(2020, 0, 1), // 01-01-2020 en format français
-      statut: 'APPROUVE',
+      statut: 'EN_ATTENTE',
       role: 'PRESIDENT',
       code_formulaire: 'N°001/AGCO/P/01-2025',
       photo_profil_url: 'https://via.placeholder.com/300x400',
@@ -59,7 +59,7 @@ async function main() {
       date_entree_congo: new Date(2010, 0, 1), // 01-01-2010 en format français
       employeur_ecole: 'SGM Association',
       date_emission_piece: new Date(2020, 0, 1), // 01-01-2020 en format français
-      statut: 'APPROUVE',
+      statut: 'EN_ATTENTE',
       role: 'SECRETAIRE_GENERALE',
       code_formulaire: 'N°002/AGCO/SG/01-2025',
       photo_profil_url: 'https://via.placeholder.com/300x400',
