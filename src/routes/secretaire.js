@@ -1953,22 +1953,9 @@ router.post('/approuver-formulaire-admin',
  *                 type: string
  *                 description: Raison principale du rejet
  *                 example: "Informations manquantes dans le formulaire"
- *               categorie_rejet:
- *                 type: string
- *                 enum: [DOCUMENTS_ILLISIBLES, INFORMATIONS_INCORRECTES, DOCUMENTS_MANQUANTS, PHOTO_INADEQUATE, SIGNATURE_MANQUANTE, AUTRE]
- *                 description: Catégorie du rejet (optionnel, défaut: AUTRE)
- *                 example: "DOCUMENTS_ILLISIBLES"
- *               suggestions:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: Suggestions pour corriger le formulaire
- *                 example: ["Vérifiez que tous les documents sont clairs", "Assurez-vous que les informations sont complètes"]
  *           example:
  *             id_formulaire: 1
  *             raison: "Documents illisibles, merci de les resoumettre"
- *             categorie_rejet: "DOCUMENTS_ILLISIBLES"
- *             suggestions: ["Vérifiez que tous les documents sont clairs", "Assurez-vous que les informations sont complètes"]
  *     responses:
  *       200:
  *         description: Formulaire personnel administrateur rejeté
@@ -2014,14 +2001,6 @@ router.post('/approuver-formulaire-admin',
  *                     raison_principale:
  *                       type: string
  *                       example: "Documents illisibles, merci de les resoumettre"
- *                     categorie:
- *                       type: string
- *                       example: "DOCUMENTS_ILLISIBLES"
- *                     suggestions:
- *                       type: array
- *                       items:
- *                         type: string
- *                       example: ["Vérifiez que tous les documents sont clairs", "Assurez-vous que les informations sont complètes"]
  *                 actions_effectuees:
  *                   type: array
  *                   items:

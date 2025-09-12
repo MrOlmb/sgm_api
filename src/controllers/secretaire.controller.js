@@ -2280,7 +2280,7 @@ class ControleurSecretaire {
       }
 
       // Approuver l'utilisateur administrateur dans une transaction atomique
-        logger.info(`Mise à jour du statut administrateur ${formulaireAdmin.utilisateur.id} vers APPROUVE`, {
+      logger.info(`Mise à jour du statut administrateur ${formulaireAdmin.utilisateur.id} vers APPROUVE`, {
         admin_id: formulaireAdmin.utilisateur.id,
         admin_role: formulaireAdmin.utilisateur.role,
         update_data: updateData
@@ -2398,7 +2398,7 @@ class ControleurSecretaire {
   async rejeterFormulaireAdmin(req, res) {
     try {
       const idSecretaire = req.utilisateur.id;
-      const { id_formulaire, raison, categorie_rejet, suggestions } = req.body;
+      const { id_formulaire, raison } = req.body;
 
       if (!id_formulaire || !raison) {
         return res.status(400).json({
@@ -2406,20 +2406,6 @@ class ControleurSecretaire {
           code: 'DONNEES_MANQUANTES'
         });
       }
-
-      // Catégories de rejet prédéfinies (même que pour les membres)
-      const categoriesValides = [
-        'DOCUMENTS_ILLISIBLES',
-        'INFORMATIONS_INCORRECTES', 
-        'DOCUMENTS_MANQUANTS',
-        'PHOTO_INADEQUATE',
-        'SIGNATURE_MANQUANTE',
-        'AUTRE'
-      ];
-
-      const categorieRejet = categorie_rejet && categoriesValides.includes(categorie_rejet) 
-        ? categorie_rejet 
-        : 'AUTRE';
 
       // Récupérer le formulaire d'administrateur
       const formulaireAdmin = await prisma.formulaireAdhesion.findUnique({
@@ -2468,8 +2454,6 @@ class ControleurSecretaire {
         data: {
           statut: 'REJETE',
           raison_rejet: raison,
-          categorie_rejet: categorieRejet,
-          suggestions_rejet: suggestions || [],
           rejete_le: new Date(),
           rejete_par: idSecretaire,
           modifie_le: new Date()
@@ -2487,9 +2471,7 @@ class ControleurSecretaire {
             admin_role: formulaireAdmin.utilisateur.role,
             admin_nom: `${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`,
             type_formulaire: 'ADMIN_PERSONNEL',
-            raison_rejet: raison,
-            categorie_rejet: categorieRejet,
-            suggestions: suggestions || []
+            raison_rejet: raison
           },
           adresse_ip: req.ip,
           agent_utilisateur: req.get('User-Agent')
@@ -2512,9 +2494,7 @@ class ControleurSecretaire {
           date_rejet: utilisateurRejete.modifie_le
         },
         rejet: {
-          raison_principale: raison,
-          categorie: categorieRejet,
-          suggestions: suggestions || []
+          raison_principale: raison
         },
         actions_effectuees: [
           '❌ Formulaire personnel administrateur rejeté',
