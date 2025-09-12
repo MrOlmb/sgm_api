@@ -241,7 +241,8 @@ class AdminFormController {
           role_admin: roleAdmin,
           telephone: donneesValidees.telephone,
           date_soumission: formulaireAdhesion.cree_le,
-          url_fiche_formulaire: donneesValidees.url_image_formulaire
+          url_fiche_formulaire: donneesValidees.url_image_formulaire,
+          selfie_photo_url: donneesValidees.selfie_photo_url
         },
         prochaines_etapes: [
           '✅ Votre formulaire personnel a été soumis avec succès',
