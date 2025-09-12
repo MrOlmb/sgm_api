@@ -2337,6 +2337,20 @@ class ControleurSecretaire {
         });
       }
 
+      // Catégories de rejet prédéfinies (même que pour les membres)
+      const categoriesValides = [
+        'DOCUMENTS_ILLISIBLES',
+        'INFORMATIONS_INCORRECTES', 
+        'DOCUMENTS_MANQUANTS',
+        'PHOTO_INADEQUATE',
+        'SIGNATURE_MANQUANTE',
+        'AUTRE'
+      ];
+
+      const categorieRejet = categorie_rejet && categoriesValides.includes(categorie_rejet) 
+        ? categorie_rejet 
+        : 'AUTRE';
+
       // Récupérer le formulaire d'administrateur
       const formulaireAdmin = await prisma.formulaireAdhesion.findUnique({
         where: { id: parseInt(id_formulaire) },
@@ -2384,6 +2398,8 @@ class ControleurSecretaire {
         data: {
           statut: 'REJETE',
           raison_rejet: raison,
+          categorie_rejet: categorieRejet,
+          suggestions_rejet: suggestions || [],
           rejete_le: new Date(),
           rejete_par: idSecretaire,
           modifie_le: new Date()
@@ -2402,7 +2418,7 @@ class ControleurSecretaire {
             admin_nom: `${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`,
             type_formulaire: 'ADMIN_PERSONNEL',
             raison_rejet: raison,
-            categorie_rejet: categorie_rejet || 'AUTRE',
+            categorie_rejet: categorieRejet,
             suggestions: suggestions || []
           },
           adresse_ip: req.ip,
@@ -2427,7 +2443,7 @@ class ControleurSecretaire {
         },
         rejet: {
           raison_principale: raison,
-          categorie: categorie_rejet || 'AUTRE',
+          categorie: categorieRejet,
           suggestions: suggestions || []
         },
         actions_effectuees: [

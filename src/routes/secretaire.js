@@ -1939,8 +1939,9 @@ router.post('/approuver-formulaire-admin',
  *                 example: "Informations manquantes dans le formulaire"
  *               categorie_rejet:
  *                 type: string
- *                 description: Catégorie du rejet
- *                 example: "DOCUMENTS_INCOMPLETS"
+ *                 enum: [DOCUMENTS_ILLISIBLES, INFORMATIONS_INCORRECTES, DOCUMENTS_MANQUANTS, PHOTO_INADEQUATE, SIGNATURE_MANQUANTE, AUTRE]
+ *                 description: Catégorie du rejet (optionnel, défaut: AUTRE)
+ *                 example: "DOCUMENTS_ILLISIBLES"
  *               suggestions:
  *                 type: array
  *                 items:
@@ -1949,8 +1950,8 @@ router.post('/approuver-formulaire-admin',
  *                 example: ["Vérifiez que tous les documents sont clairs", "Assurez-vous que les informations sont complètes"]
  *           example:
  *             id_formulaire: 1
- *             raison: "Informations manquantes dans le formulaire"
- *             categorie_rejet: "DOCUMENTS_INCOMPLETS"
+ *             raison: "Documents illisibles, merci de les resoumettre"
+ *             categorie_rejet: "DOCUMENTS_ILLISIBLES"
  *             suggestions: ["Vérifiez que tous les documents sont clairs", "Assurez-vous que les informations sont complètes"]
  *     responses:
  *       200:
@@ -1996,10 +1997,10 @@ router.post('/approuver-formulaire-admin',
  *                   properties:
  *                     raison_principale:
  *                       type: string
- *                       example: "Informations manquantes dans le formulaire"
+ *                       example: "Documents illisibles, merci de les resoumettre"
  *                     categorie:
  *                       type: string
- *                       example: "DOCUMENTS_INCOMPLETS"
+ *                       example: "DOCUMENTS_ILLISIBLES"
  *                     suggestions:
  *                       type: array
  *                       items:
