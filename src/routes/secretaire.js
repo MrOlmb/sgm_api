@@ -1756,14 +1756,46 @@ router.get('/formulaires-admin',
  *         application/json:
  *           schema:
  *             type: object
- *             required: [id_formulaire]
+ *             required: 
+ *               - id_formulaire
+ *               - url_formulaire_final
  *             properties:
  *               id_formulaire:
  *                 type: integer
  *                 description: ID du formulaire administrateur à approuver
  *                 example: 1
+ *               url_formulaire_final:
+ *                 type: string
+ *                 format: uri
+ *                 description: |
+ *                   **REQUIS** : URL Cloudinary du PDF final avec signatures 
+ *                   généré par le frontend au moment de l'approbation.
+ *                 example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/formulaire_final_approuve_admin_1.pdf"
+ *               carte_recto_url:
+ *                 type: string
+ *                 format: uri
+ *                 description: |
+ *                   **OPTIONNEL** : URL Cloudinary de l'image de la face avant de la carte de membre.
+ *                   Si fourni, carte_verso_url est également requis.
+ *                 example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_recto_admin_1.jpg"
+ *               carte_verso_url:
+ *                 type: string
+ *                 format: uri
+ *                 description: |
+ *                   **OPTIONNEL** : URL Cloudinary de l'image de la face arrière de la carte de membre.
+ *                   Si fourni, carte_recto_url est également requis.
+ *                 example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_verso_admin_1.jpg"
+ *               commentaire:
+ *                 type: string
+ *                 maxLength: 500
+ *                 description: Commentaire optionnel du secrétaire
+ *                 example: "Formulaire administrateur validé"
  *           example:
  *             id_formulaire: 1
+ *             url_formulaire_final: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/formulaire_final_approuve_admin_1.pdf"
+ *             carte_recto_url: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_recto_admin_1.jpg"
+ *             carte_verso_url: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_verso_admin_1.jpg"
+ *             commentaire: "Formulaire administrateur validé"
  *     responses:
  *       200:
  *         description: Formulaire personnel administrateur approuvé avec succès
@@ -1812,6 +1844,28 @@ router.get('/formulaires-admin',
  *                     - "📋 Informations personnelles validées"
  *                     - "🔐 Accès à l'application maintenu (pas d'impact sur la connexion)"
  *                     - "📧 Notification envoyée à l'administrateur"
+ *                     - "🎴 Cartes de membre (recto/verso) ajoutées"
+ *                 cartes_membre:
+ *                   type: object
+ *                   nullable: true
+ *                   description: Informations sur les cartes de membre si fournies
+ *                   properties:
+ *                     recto_url:
+ *                       type: string
+ *                       format: uri
+ *                       example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_recto_admin_1.jpg"
+ *                     verso_url:
+ *                       type: string
+ *                       format: uri
+ *                       example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877890/carte_verso_admin_1.jpg"
+ *                     generee_le:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-01-15T10:30:00Z"
+ *                     generee_par:
+ *                       type: integer
+ *                       description: ID du secrétaire qui a généré les cartes
+ *                       example: 2
  *                 impact_connexion:
  *                   type: object
  *                   properties:

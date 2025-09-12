@@ -2153,12 +2153,20 @@ class ControleurSecretaire {
   async approuverFormulaireAdmin(req, res) {
     try {
       const idSecretaire = req.utilisateur.id;
-      const { id_formulaire } = req.body;
+      const { id_formulaire, url_formulaire_final, carte_recto_url, carte_verso_url, commentaire } = req.body;
 
       if (!id_formulaire) {
         return res.status(400).json({
           erreur: 'ID du formulaire requis',
           code: 'DONNEES_MANQUANTES'
+        });
+      }
+
+      if (!url_formulaire_final) {
+        return res.status(400).json({
+          erreur: 'URL du formulaire final requis',
+          code: 'URL_FORMULAIRE_MANQUANT',
+          message: 'Le PDF final avec signatures doit être généré par le frontend avant approbation'
         });
       }
 
@@ -2203,13 +2211,50 @@ class ControleurSecretaire {
         });
       }
 
+      // Validate membership card URLs if provided
+      if (carte_recto_url || carte_verso_url) {
+        if (!carte_recto_url || !carte_verso_url) {
+          return res.status(400).json({
+            erreur: 'Les deux URLs de carte de membre (recto et verso) sont requises si des cartes sont fournies',
+            code: 'CARTES_INCOMPLETES',
+            message: 'Fournissez à la fois carte_recto_url et carte_verso_url'
+          });
+        }
+
+        // Validate card URLs with schema
+        try {
+          genererCartesMembreSchema.parse({
+            id_utilisateur: formulaireAdmin.utilisateur.id,
+            carte_recto_url: carte_recto_url,
+            carte_verso_url: carte_verso_url
+          });
+        } catch (validationError) {
+          return res.status(400).json({
+            erreur: 'Données des cartes de membre invalides',
+            code: 'VALIDATION_CARTES_ECHOUEE',
+            details: validationError.errors || []
+          });
+        }
+      }
+
+      // Prepare update data
+      const updateData = {
+        statut: 'APPROUVE',
+        modifie_le: new Date()
+      };
+
+      // Add membership card URLs if provided
+      if (carte_recto_url && carte_verso_url) {
+        updateData.carte_recto_url = carte_recto_url;
+        updateData.carte_verso_url = carte_verso_url;
+        updateData.carte_generee_le = new Date();
+        updateData.carte_generee_par = idSecretaire;
+      }
+
       // Approuver l'utilisateur administrateur (mettre à jour son statut)
       const utilisateurApprouve = await prisma.utilisateur.update({
         where: { id: formulaireAdmin.utilisateur.id },
-        data: {
-          statut: 'APPROUVE',
-          modifie_le: new Date()
-        }
+        data: updateData
       });
 
       // Journal d'audit
@@ -2222,7 +2267,11 @@ class ControleurSecretaire {
             admin_id: formulaireAdmin.utilisateur.id,
             admin_role: formulaireAdmin.utilisateur.role,
             admin_nom: `${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`,
-            type_formulaire: 'ADMIN_PERSONNEL'
+            type_formulaire: 'ADMIN_PERSONNEL',
+            commentaire: commentaire || null,
+            cartes_membre_ajoutees: !!(carte_recto_url && carte_verso_url),
+            carte_recto_url: carte_recto_url || null,
+            carte_verso_url: carte_verso_url || null
           },
           adresse_ip: req.ip,
           agent_utilisateur: req.get('User-Agent')
@@ -2248,8 +2297,15 @@ class ControleurSecretaire {
           '✅ Formulaire personnel administrateur approuvé',
           '📋 Informations personnelles validées',
           '🔐 Accès à l\'application maintenu (pas d\'impact sur la connexion)',
-          '📧 Notification envoyée à l\'administrateur'
+          '📧 Notification envoyée à l\'administrateur',
+          ...(carte_recto_url && carte_verso_url ? ['🎴 Cartes de membre (recto/verso) ajoutées'] : [])
         ],
+        cartes_membre: (carte_recto_url && carte_verso_url) ? {
+          recto_url: carte_recto_url,
+          verso_url: carte_verso_url,
+          generee_le: utilisateurApprouve.carte_generee_le,
+          generee_par: idSecretaire
+        } : null,
         impact_connexion: {
           peut_se_connecter: true,
           acces_application: 'COMPLET',
