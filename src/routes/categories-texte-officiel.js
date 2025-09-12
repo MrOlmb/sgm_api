@@ -7,7 +7,8 @@ const { authentifierJWT, verifierRole } = require('../middleware/auth-local');
 router.use(authentifierJWT);
 
 // Middleware de vérification des rôles (seuls les secrétaires et présidents)
-router.use(verifierRole('SECRETAIRE_GENERALE', 'PRESIDENT'));
+const verifierRoleAdmin = verifierRole('PRESIDENT', 'SECRETAIRE_GENERALE');
+
 
 /**
  * @swagger
