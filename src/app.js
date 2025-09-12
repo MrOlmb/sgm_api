@@ -15,6 +15,7 @@ const adhesionRoutes = require('./routes/adhesion');
 const texteOfficielRoutes = require('./routes/texte-officiel'); // Routes textes officiels
 const categorieTexteOfficielRoutes = require('./routes/categories-texte-officiel'); // Routes catégories textes officiels
 const signatureRoutes = require('./routes/signature'); // Routes signatures Cloudinary
+const adminFormRoutes = require('./routes/admin-form'); // Routes formulaires personnels administrateurs
 
 // Swagger documentation
 const { specs, swaggerUi } = require('./config/swagger');
@@ -71,6 +72,7 @@ app.use('/api/adhesion', adhesionRoutes);
 app.use('/api/textes-officiels', texteOfficielRoutes); // Routes textes officiels
 app.use('/api/categories-texte-officiel', categorieTexteOfficielRoutes); // Routes catégories textes officiels
 app.use('/api/signature', signatureRoutes); // Routes signatures Cloudinary
+app.use('/api/admin', adminFormRoutes); // Routes formulaires personnels administrateurs
 
 // Swagger documentation routes
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
@@ -117,6 +119,9 @@ app.get('/api', (req, res) => {
       adhesion_statut: '/api/adhesion/statut (GET) - Statut demande adhésion',
       categories_texte_officiel: '/api/categories-texte-officiel (GET/POST) - Gestion des catégories',
       textes_officiels: '/api/textes-officiels (GET/POST) - Textes officiels avec catégories dynamiques',
+      admin_formulaire_personnel: '/api/admin/formulaire-personnel (POST) - Formulaire personnel administrateurs',
+      admin_statut_formulaire: '/api/admin/formulaire-personnel/statut (GET) - Statut formulaire personnel',
+      admin_schema_formulaire: '/api/admin/formulaire-personnel/schema (GET) - Schéma formulaire personnel',
       // register: '/api/register - DEPRECATED (was Clerk-based)',
       // register_status: '/api/register/status - DEPRECATED (was Clerk-based)'
     },

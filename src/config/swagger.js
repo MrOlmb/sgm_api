@@ -429,6 +429,261 @@ const options = {
             }
           }
         },
+        AdminFormRequest: {
+          type: 'object',
+          required: ['prenoms', 'nom', 'date_naissance', 'lieu_naissance', 'adresse', 'profession', 'ville_residence', 'date_entree_congo', 'employeur_ecole', 'telephone', 'url_image_formulaire'],
+          properties: {
+            prenoms: { type: 'string', minLength: 2, maxLength: 100, example: 'Jean Claude' },
+            nom: { type: 'string', minLength: 2, maxLength: 50, example: 'MBONGO' },
+            date_naissance: { type: 'string', pattern: '^\\d{2}-\\d{2}-\\d{4}$', example: '15-03-1990' },
+            lieu_naissance: { type: 'string', minLength: 2, maxLength: 100, example: 'Brazzaville' },
+            adresse: { type: 'string', minLength: 5, maxLength: 200, example: '123 Avenue de la République' },
+            profession: { type: 'string', minLength: 2, maxLength: 100, example: 'Ingénieur Informatique' },
+            ville_residence: { type: 'string', minLength: 2, maxLength: 100, example: 'Pointe-Noire' },
+            date_entree_congo: { type: 'string', pattern: '^\\d{2}-\\d{2}-\\d{4}$', example: '10-01-2020' },
+            employeur_ecole: { type: 'string', minLength: 2, maxLength: 150, example: 'Université Marien Ngouabi' },
+            telephone: { type: 'string', minLength: 8, maxLength: 20, pattern: '^\\+?[0-9]+$', example: '+242066123456' },
+            url_image_formulaire: { type: 'string', format: 'uri', example: 'https://res.cloudinary.com/your-cloud/image/upload/v123456789/formulaire_admin.pdf' },
+            numero_carte_consulaire: { type: 'string', minLength: 5, maxLength: 20, example: 'GAB123456' },
+            date_emission_piece: { type: 'string', pattern: '^\\d{2}-\\d{2}-\\d{4}$', example: '15-01-2025' },
+            prenom_conjoint: { type: 'string', maxLength: 100, example: 'Marie' },
+            nom_conjoint: { type: 'string', maxLength: 50, example: 'DUPONT' },
+            nombre_enfants: { type: 'integer', minimum: 0, maximum: 20, example: 2 },
+            selfie_photo_url: { type: 'string', format: 'uri', example: 'https://res.cloudinary.com/your-cloud/image/upload/v123456789/selfie_admin.jpg' },
+            signature_url: { type: 'string', format: 'uri', example: 'https://res.cloudinary.com/your-cloud/image/upload/v123456789/signature_admin.png' },
+            commentaire: { type: 'string', maxLength: 100, example: 'Mise à jour des informations personnelles' }
+          }
+        },
+        AdminFormResponse: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Formulaire personnel soumis avec succès' },
+            formulaire: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer', example: 1 },
+                type: { type: 'string', example: 'ADMIN_PERSONNEL' },
+                nom_complet: { type: 'string', example: 'Jean Claude MBONGO' },
+                role_admin: { type: 'string', enum: ['PRESIDENT', 'SECRETAIRE_GENERALE'], example: 'PRESIDENT' },
+                telephone: { type: 'string', example: '+242066123456' },
+                statut: { type: 'string', enum: ['EN_ATTENTE', 'APPROUVE', 'REJETE'], example: 'EN_ATTENTE' },
+                date_soumission: { type: 'string', format: 'date-time', example: '2025-01-15T10:30:00Z' },
+                url_fiche_formulaire: { type: 'string', format: 'uri', example: 'https://res.cloudinary.com/your-cloud/image/upload/v123456789/formulaire_admin.pdf' }
+              }
+            },
+            prochaines_etapes: {
+              type: 'array',
+              items: { type: 'string' },
+              example: [
+                '✅ Votre formulaire personnel a été soumis avec succès',
+                '👩‍💼 Il sera examiné par le secrétariat dans les plus brefs délais',
+                '📧 Vous recevrez une notification dès qu\'une décision sera prise',
+                '🔐 Votre accès à l\'application reste inchangé pendant la validation'
+              ]
+            },
+            impact_connexion: {
+              type: 'object',
+              properties: {
+                peut_se_connecter: { type: 'boolean', example: true },
+                acces_application: { type: 'string', example: 'COMPLET' },
+                message: { type: 'string', example: 'Votre formulaire personnel n\'affecte pas votre capacité à utiliser l\'application' }
+              }
+            }
+          }
+        },
+        AdminFormStatusResponse: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Statut du formulaire personnel récupéré' },
+            formulaire: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                id: { type: 'integer', example: 1 },
+                type: { type: 'string', example: 'ADMIN_PERSONNEL' },
+                statut: { type: 'string', enum: ['EN_ATTENTE', 'APPROUVE', 'REJETE'], example: 'EN_ATTENTE' },
+                date_soumission: { type: 'string', format: 'date-time', example: '2025-01-15T10:30:00Z' },
+                derniere_mise_a_jour: { type: 'string', format: 'date-time', example: '2025-01-15T10:30:00Z' },
+                url_fiche_formulaire: { type: 'string', format: 'uri', example: 'https://res.cloudinary.com/your-cloud/image/upload/v123456789/formulaire_admin.pdf' },
+                version: { type: 'integer', example: 1 }
+              }
+            },
+            details_rejet: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                raison: { type: 'string', example: 'Informations manquantes' },
+                categorie: { type: 'string', example: 'DOCUMENTS_INCOMPLETS' },
+                suggestions: { type: 'array', items: { type: 'string' }, example: ['Vérifiez que tous les documents sont clairs', 'Assurez-vous que les informations sont complètes'] },
+                date_rejet: { type: 'string', format: 'date-time', example: '2025-01-15T10:30:00Z' },
+                peut_resoumis: { type: 'boolean', example: true }
+              }
+            },
+            peut_soumettre: { type: 'boolean', example: true },
+            impact_connexion: {
+              type: 'object',
+              properties: {
+                peut_se_connecter: { type: 'boolean', example: true },
+                acces_application: { type: 'string', example: 'COMPLET' },
+                message: { type: 'string', example: 'Votre formulaire personnel n\'affecte pas votre capacité à utiliser l\'application' }
+              }
+            }
+          }
+        },
+        AdminFormSchemaResponse: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Schéma du formulaire personnel administrateur' },
+            schema: {
+              type: 'object',
+              properties: {
+                type: { type: 'string', example: 'ADMIN_PERSONNEL' },
+                description: { type: 'string', example: 'Formulaire personnel pour les administrateurs (Président et Secrétaire Générale)' },
+                champs_requis: { type: 'array', items: { type: 'string' }, example: ['prenoms', 'nom', 'date_naissance', 'lieu_naissance', 'adresse', 'profession', 'ville_residence', 'date_entree_congo', 'employeur_ecole', 'telephone', 'url_image_formulaire'] },
+                champs_optionnels: { type: 'array', items: { type: 'string' }, example: ['numero_carte_consulaire', 'date_emission_piece', 'prenom_conjoint', 'nom_conjoint', 'nombre_enfants', 'selfie_photo_url', 'signature_url', 'commentaire'] },
+                exemple_donnees: { type: 'object' },
+                differences_avec_adhésion: { type: 'array', items: { type: 'string' }, example: ['Type de formulaire: ADMIN_PERSONNEL', 'Pas d\'impact sur la capacité de connexion', 'Validation par le secrétariat mais avec conséquences différentes', 'Permet la mise à jour des informations d\'administrateurs existants'] }
+              }
+            }
+          }
+        },
+        AdminFormListResponse: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Liste des formulaires administrateurs récupérée' },
+            donnees: {
+              type: 'object',
+              properties: {
+                formulaires: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer', example: 1 },
+                      type: { type: 'string', example: 'ADMIN_PERSONNEL' },
+                      utilisateur: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'integer', example: 1 },
+                          nom_complet: { type: 'string', example: 'Jean Claude MBONGO' },
+                          nom_utilisateur: { type: 'string', example: 'president.sgm' },
+                          role: { type: 'string', enum: ['PRESIDENT', 'SECRETAIRE_GENERALE'], example: 'PRESIDENT' },
+                          email: { type: 'string', example: 'president@sgm.com' },
+                          telephone: { type: 'string', example: '+242066123456' }
+                        }
+                      },
+                      statut: { type: 'string', enum: ['EN_ATTENTE', 'APPROUVE', 'REJETE'], example: 'EN_ATTENTE' },
+                      date_soumission: { type: 'string', format: 'date-time', example: '2025-01-15T10:30:00Z' },
+                      derniere_mise_a_jour: { type: 'string', format: 'date-time', example: '2025-01-15T10:30:00Z' },
+                      url_fiche_formulaire: { type: 'string', format: 'uri', example: 'https://res.cloudinary.com/your-cloud/image/upload/v123456789/formulaire_admin.pdf' },
+                      version: { type: 'integer', example: 1 },
+                      donnees_snapshot: { type: 'object', description: 'Données complètes du formulaire' }
+                    }
+                  }
+                },
+                pagination: {
+                  type: 'object',
+                  properties: {
+                    page: { type: 'integer', example: 1 },
+                    limite: { type: 'integer', example: 20 },
+                    total: { type: 'integer', example: 5 },
+                    pages_total: { type: 'integer', example: 1 }
+                  }
+                }
+              }
+            }
+          }
+        },
+        AdminFormApprovalResponse: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Formulaire personnel administrateur approuvé avec succès' },
+            formulaire: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer', example: 1 },
+                type: { type: 'string', example: 'ADMIN_PERSONNEL' },
+                utilisateur: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer', example: 1 },
+                    nom_complet: { type: 'string', example: 'Jean Claude MBONGO' },
+                    role: { type: 'string', example: 'PRESIDENT' }
+                  }
+                },
+                statut: { type: 'string', example: 'APPROUVE' },
+                date_approbation: { type: 'string', format: 'date-time', example: '2025-01-15T10:30:00Z' }
+              }
+            },
+            actions_effectuees: {
+              type: 'array',
+              items: { type: 'string' },
+              example: [
+                '✅ Formulaire personnel administrateur approuvé',
+                '📋 Informations personnelles validées',
+                '🔐 Accès à l\'application maintenu (pas d\'impact sur la connexion)',
+                '📧 Notification envoyée à l\'administrateur'
+              ]
+            },
+            impact_connexion: {
+              type: 'object',
+              properties: {
+                peut_se_connecter: { type: 'boolean', example: true },
+                acces_application: { type: 'string', example: 'COMPLET' },
+                message: { type: 'string', example: 'L\'approbation n\'affecte pas la capacité de connexion de l\'administrateur' }
+              }
+            }
+          }
+        },
+        AdminFormRejectionResponse: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Formulaire personnel administrateur rejeté' },
+            formulaire: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer', example: 1 },
+                type: { type: 'string', example: 'ADMIN_PERSONNEL' },
+                utilisateur: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer', example: 1 },
+                    nom_complet: { type: 'string', example: 'Jean Claude MBONGO' },
+                    role: { type: 'string', example: 'PRESIDENT' }
+                  }
+                },
+                statut: { type: 'string', example: 'REJETE' },
+                date_rejet: { type: 'string', format: 'date-time', example: '2025-01-15T10:30:00Z' }
+              }
+            },
+            rejet: {
+              type: 'object',
+              properties: {
+                raison_principale: { type: 'string', example: 'Informations manquantes dans le formulaire' },
+                categorie: { type: 'string', example: 'DOCUMENTS_INCOMPLETS' },
+                suggestions: { type: 'array', items: { type: 'string' }, example: ['Vérifiez que tous les documents sont clairs', 'Assurez-vous que les informations sont complètes'] }
+              }
+            },
+            actions_effectuees: {
+              type: 'array',
+              items: { type: 'string' },
+              example: [
+                '❌ Formulaire personnel administrateur rejeté',
+                '📋 Raison du rejet documentée',
+                '🔐 Accès à l\'application maintenu (pas d\'impact sur la connexion)',
+                '📧 Notification envoyée à l\'administrateur'
+              ]
+            },
+            impact_connexion: {
+              type: 'object',
+              properties: {
+                peut_se_connecter: { type: 'boolean', example: true },
+                acces_application: { type: 'string', example: 'COMPLET' },
+                message: { type: 'string', example: 'Le rejet n\'affecte pas la capacité de connexion de l\'administrateur' }
+              }
+            }
+          }
+        }
       }
     },
     security: [
@@ -468,6 +723,10 @@ const options = {
       {
         name: 'Categories Texte Officiel',
         description: 'Gestion des catégories de textes officiels (Secrétaire et Président uniquement)'
+      },
+      {
+        name: 'Admin Forms',
+        description: 'Formulaires personnels pour les administrateurs (Président et Secrétaire Générale)'
       }
     ]
   },

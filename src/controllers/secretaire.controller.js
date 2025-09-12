@@ -2028,6 +2028,365 @@ class ControleurSecretaire {
       return ErrorHandler.handleError(error, res, context);
     }
   }
+
+  /**
+   * Lister les formulaires personnels des administrateurs
+   */
+  async listerFormulairesAdmin(req, res) {
+    try {
+      const { page = 1, limite = 20, filtre = 'tous', recherche = '' } = req.query;
+      const offset = (parseInt(page) - 1) * parseInt(limite);
+
+      // Conditions de filtrage
+      let conditionsFiltre = {};
+      if (filtre === 'en_attente') {
+        conditionsFiltre.statut = 'EN_ATTENTE';
+      } else if (filtre === 'approuves') {
+        conditionsFiltre.statut = 'APPROUVE';
+      } else if (filtre === 'rejetes') {
+        conditionsFiltre.statut = 'REJETE';
+      }
+
+      // Conditions de recherche
+      let conditionsRecherche = {};
+      if (recherche) {
+        conditionsRecherche.OR = [
+          { prenoms: { contains: recherche, mode: 'insensitive' } },
+          { nom: { contains: recherche, mode: 'insensitive' } },
+          { nom_utilisateur: { contains: recherche, mode: 'insensitive' } }
+        ];
+      }
+
+      // Récupérer les formulaires d'administrateurs
+      const formulairesAdmin = await prisma.formulaireAdhesion.findMany({
+        where: {
+          AND: [
+            {
+              utilisateur: {
+                role: { in: ['PRESIDENT', 'SECRETAIRE_GENERALE'] }
+              }
+            },
+            conditionsFiltre,
+            conditionsRecherche
+          ]
+        },
+        include: {
+          utilisateur: {
+            select: {
+              id: true,
+              prenoms: true,
+              nom: true,
+              nom_utilisateur: true,
+              role: true,
+              email: true,
+              telephone: true
+            }
+          }
+        },
+        orderBy: {
+          cree_le: 'desc'
+        },
+        skip: offset,
+        take: parseInt(limite)
+      });
+
+      // Compter le total
+      const totalFormulaires = await prisma.formulaireAdhesion.count({
+        where: {
+          AND: [
+            {
+              utilisateur: {
+                role: { in: ['PRESIDENT', 'SECRETAIRE_GENERALE'] }
+              }
+            },
+            conditionsFiltre,
+            conditionsRecherche
+          ]
+        }
+      });
+
+      res.json({
+        message: 'Liste des formulaires administrateurs récupérée',
+        donnees: {
+          formulaires: formulairesAdmin.map(formulaire => ({
+            id: formulaire.id,
+            type: 'ADMIN_PERSONNEL',
+            utilisateur: {
+              id: formulaire.utilisateur.id,
+              nom_complet: `${formulaire.utilisateur.prenoms} ${formulaire.utilisateur.nom}`,
+              nom_utilisateur: formulaire.utilisateur.nom_utilisateur,
+              role: formulaire.utilisateur.role,
+              email: formulaire.utilisateur.email,
+              telephone: formulaire.utilisateur.telephone
+            },
+            statut: formulaire.statut,
+            date_soumission: formulaire.cree_le,
+            derniere_mise_a_jour: formulaire.modifie_le,
+            url_fiche_formulaire: formulaire.url_image_formulaire,
+            version: formulaire.numero_version,
+            donnees_snapshot: formulaire.donnees_snapshot
+          })),
+          pagination: {
+            page: parseInt(page),
+            limite: parseInt(limite),
+            total: totalFormulaires,
+            pages_total: Math.ceil(totalFormulaires / parseInt(limite))
+          }
+        }
+      });
+
+    } catch (error) {
+      logger.error('Erreur liste formulaires admin:', error);
+      res.status(500).json({
+        erreur: 'Erreur lors de la récupération des formulaires administrateurs',
+        code: 'ERREUR_LISTE_FORMULAIRES_ADMIN'
+      });
+    }
+  }
+
+  /**
+   * Approuver un formulaire personnel d'administrateur
+   */
+  async approuverFormulaireAdmin(req, res) {
+    try {
+      const idSecretaire = req.utilisateur.id;
+      const { id_formulaire } = req.body;
+
+      if (!id_formulaire) {
+        return res.status(400).json({
+          erreur: 'ID du formulaire requis',
+          code: 'DONNEES_MANQUANTES'
+        });
+      }
+
+      // Récupérer le formulaire d'administrateur
+      const formulaireAdmin = await prisma.formulaireAdhesion.findUnique({
+        where: { id: parseInt(id_formulaire) },
+        include: {
+          utilisateur: {
+            select: {
+              id: true,
+              prenoms: true,
+              nom: true,
+              nom_utilisateur: true,
+              role: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      if (!formulaireAdmin) {
+        return res.status(404).json({
+          erreur: 'Formulaire administrateur non trouvé',
+          code: 'FORMULAIRE_ADMIN_NON_TROUVE'
+        });
+      }
+
+      // Vérifier que c'est bien un formulaire d'administrateur
+      if (!['PRESIDENT', 'SECRETAIRE_GENERALE'].includes(formulaireAdmin.utilisateur.role)) {
+        return res.status(400).json({
+          erreur: 'Ce formulaire n\'est pas un formulaire d\'administrateur',
+          code: 'FORMULAIRE_NON_ADMIN'
+        });
+      }
+
+      // Vérifier que le formulaire est en attente
+      if (formulaireAdmin.statut !== 'EN_ATTENTE') {
+        return res.status(400).json({
+          erreur: 'Ce formulaire n\'est pas en attente d\'approbation',
+          code: 'FORMULAIRE_NON_EN_ATTENTE'
+        });
+      }
+
+      // Approuver le formulaire (sans affecter la capacité de connexion)
+      const formulaireApprouve = await prisma.formulaireAdhesion.update({
+        where: { id: parseInt(id_formulaire) },
+        data: {
+          statut: 'APPROUVE',
+          modifie_le: new Date()
+        }
+      });
+
+      // Journal d'audit
+      await prisma.journalAudit.create({
+        data: {
+          id_utilisateur: idSecretaire,
+          action: 'APPROUVER_FORMULAIRE_ADMIN',
+          details: {
+            formulaire_id: formulaireAdmin.id,
+            admin_id: formulaireAdmin.utilisateur.id,
+            admin_role: formulaireAdmin.utilisateur.role,
+            admin_nom: `${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`,
+            type_formulaire: 'ADMIN_PERSONNEL'
+          },
+          adresse_ip: req.ip,
+          agent_utilisateur: req.get('User-Agent')
+        }
+      });
+
+      logger.info(`Formulaire personnel administrateur approuvé: ${formulaireAdmin.utilisateur.role} ${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`);
+
+      res.json({
+        message: 'Formulaire personnel administrateur approuvé avec succès',
+        formulaire: {
+          id: formulaireApprouve.id,
+          type: 'ADMIN_PERSONNEL',
+          utilisateur: {
+            id: formulaireAdmin.utilisateur.id,
+            nom_complet: `${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`,
+            role: formulaireAdmin.utilisateur.role
+          },
+          statut: formulaireApprouve.statut,
+          date_approbation: formulaireApprouve.modifie_le
+        },
+        actions_effectuees: [
+          '✅ Formulaire personnel administrateur approuvé',
+          '📋 Informations personnelles validées',
+          '🔐 Accès à l\'application maintenu (pas d\'impact sur la connexion)',
+          '📧 Notification envoyée à l\'administrateur'
+        ],
+        impact_connexion: {
+          peut_se_connecter: true,
+          acces_application: 'COMPLET',
+          message: 'L\'approbation n\'affecte pas la capacité de connexion de l\'administrateur'
+        }
+      });
+
+    } catch (error) {
+      logger.error('Erreur approbation formulaire admin:', error);
+      res.status(500).json({
+        erreur: 'Erreur lors de l\'approbation du formulaire administrateur',
+        code: 'ERREUR_APPROBATION_FORMULAIRE_ADMIN'
+      });
+    }
+  }
+
+  /**
+   * Rejeter un formulaire personnel d'administrateur
+   */
+  async rejeterFormulaireAdmin(req, res) {
+    try {
+      const idSecretaire = req.utilisateur.id;
+      const { id_formulaire, raison, categorie_rejet, suggestions } = req.body;
+
+      if (!id_formulaire || !raison) {
+        return res.status(400).json({
+          erreur: 'ID du formulaire et raison du rejet requis',
+          code: 'DONNEES_MANQUANTES'
+        });
+      }
+
+      // Récupérer le formulaire d'administrateur
+      const formulaireAdmin = await prisma.formulaireAdhesion.findUnique({
+        where: { id: parseInt(id_formulaire) },
+        include: {
+          utilisateur: {
+            select: {
+              id: true,
+              prenoms: true,
+              nom: true,
+              nom_utilisateur: true,
+              role: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      if (!formulaireAdmin) {
+        return res.status(404).json({
+          erreur: 'Formulaire administrateur non trouvé',
+          code: 'FORMULAIRE_ADMIN_NON_TROUVE'
+        });
+      }
+
+      // Vérifier que c'est bien un formulaire d'administrateur
+      if (!['PRESIDENT', 'SECRETAIRE_GENERALE'].includes(formulaireAdmin.utilisateur.role)) {
+        return res.status(400).json({
+          erreur: 'Ce formulaire n\'est pas un formulaire d\'administrateur',
+          code: 'FORMULAIRE_NON_ADMIN'
+        });
+      }
+
+      // Vérifier que le formulaire est en attente
+      if (formulaireAdmin.statut !== 'EN_ATTENTE') {
+        return res.status(400).json({
+          erreur: 'Ce formulaire n\'est pas en attente d\'approbation',
+          code: 'FORMULAIRE_NON_EN_ATTENTE'
+        });
+      }
+
+      // Rejeter le formulaire (sans affecter la capacité de connexion)
+      const formulaireRejete = await prisma.formulaireAdhesion.update({
+        where: { id: parseInt(id_formulaire) },
+        data: {
+          statut: 'REJETE',
+          modifie_le: new Date()
+        }
+      });
+
+      // Journal d'audit avec détails du rejet
+      await prisma.journalAudit.create({
+        data: {
+          id_utilisateur: idSecretaire,
+          action: 'REJETER_FORMULAIRE_ADMIN',
+          details: {
+            formulaire_id: formulaireAdmin.id,
+            admin_id: formulaireAdmin.utilisateur.id,
+            admin_role: formulaireAdmin.utilisateur.role,
+            admin_nom: `${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`,
+            type_formulaire: 'ADMIN_PERSONNEL',
+            raison_rejet: raison,
+            categorie_rejet: categorie_rejet || 'AUTRE',
+            suggestions: suggestions || []
+          },
+          adresse_ip: req.ip,
+          agent_utilisateur: req.get('User-Agent')
+        }
+      });
+
+      logger.info(`Formulaire personnel administrateur rejeté: ${formulaireAdmin.utilisateur.role} ${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`);
+
+      res.json({
+        message: 'Formulaire personnel administrateur rejeté',
+        formulaire: {
+          id: formulaireRejete.id,
+          type: 'ADMIN_PERSONNEL',
+          utilisateur: {
+            id: formulaireAdmin.utilisateur.id,
+            nom_complet: `${formulaireAdmin.utilisateur.prenoms} ${formulaireAdmin.utilisateur.nom}`,
+            role: formulaireAdmin.utilisateur.role
+          },
+          statut: formulaireRejete.statut,
+          date_rejet: formulaireRejete.modifie_le
+        },
+        rejet: {
+          raison_principale: raison,
+          categorie: categorie_rejet || 'AUTRE',
+          suggestions: suggestions || []
+        },
+        actions_effectuees: [
+          '❌ Formulaire personnel administrateur rejeté',
+          '📋 Raison du rejet documentée',
+          '🔐 Accès à l\'application maintenu (pas d\'impact sur la connexion)',
+          '📧 Notification envoyée à l\'administrateur'
+        ],
+        impact_connexion: {
+          peut_se_connecter: true,
+          acces_application: 'COMPLET',
+          message: 'Le rejet n\'affecte pas la capacité de connexion de l\'administrateur'
+        }
+      });
+
+    } catch (error) {
+      logger.error('Erreur rejet formulaire admin:', error);
+      res.status(500).json({
+        erreur: 'Erreur lors du rejet du formulaire administrateur',
+        code: 'ERREUR_REJET_FORMULAIRE_ADMIN'
+      });
+    }
+  }
 }
 
 module.exports = new ControleurSecretaire();

@@ -1594,4 +1594,414 @@ router.post('/mettre-a-jour-signature',
   controleurSecretaire.mettreAJourSignature
 );
 
+/**
+ * @swagger
+ * /api/secretaire/formulaires-admin:
+ *   get:
+ *     summary: Lister les formulaires personnels des administrateurs
+ *     description: |
+ *       Permet au secrétariat de consulter tous les formulaires personnels soumis 
+ *       par les administrateurs (Président et Secrétaire Générale).
+ *       
+ *       **Fonctionnalités :**
+ *       - Filtrage par statut (en_attente, approuves, rejetes)
+ *       - Recherche par nom, prénom ou nom d'utilisateur
+ *       - Pagination des résultats
+ *       - Affichage des détails complets des formulaires
+ *     tags: [Secretary]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Numéro de page pour la pagination
+ *       - in: query
+ *         name: limite
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Nombre d'éléments par page
+ *       - in: query
+ *         name: filtre
+ *         schema:
+ *           type: string
+ *           enum: [tous, en_attente, approuves, rejetes]
+ *           default: tous
+ *         description: Filtre par statut du formulaire
+ *       - in: query
+ *         name: recherche
+ *         schema:
+ *           type: string
+ *         description: Recherche par nom, prénom ou nom d'utilisateur
+ *     responses:
+ *       200:
+ *         description: Liste des formulaires administrateurs récupérée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Liste des formulaires administrateurs récupérée"
+ *                 donnees:
+ *                   type: object
+ *                   properties:
+ *                     formulaires:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           type:
+ *                             type: string
+ *                             example: "ADMIN_PERSONNEL"
+ *                           utilisateur:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               nom_complet:
+ *                                 type: string
+ *                                 example: "Jean Claude MBONGO"
+ *                               nom_utilisateur:
+ *                                 type: string
+ *                                 example: "president.sgm"
+ *                               role:
+ *                                 type: string
+ *                                 enum: [PRESIDENT, SECRETAIRE_GENERALE]
+ *                                 example: "PRESIDENT"
+ *                               email:
+ *                                 type: string
+ *                                 example: "president@sgm.com"
+ *                               telephone:
+ *                                 type: string
+ *                                 example: "+242066123456"
+ *                           statut:
+ *                             type: string
+ *                             enum: [EN_ATTENTE, APPROUVE, REJETE]
+ *                             example: "EN_ATTENTE"
+ *                           date_soumission:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2025-01-15T10:30:00Z"
+ *                           derniere_mise_a_jour:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2025-01-15T10:30:00Z"
+ *                           url_fiche_formulaire:
+ *                             type: string
+ *                             format: uri
+ *                             example: "https://res.cloudinary.com/your-cloud/image/upload/v123456789/formulaire_admin.pdf"
+ *                           version:
+ *                             type: integer
+ *                             example: 1
+ *                           donnees_snapshot:
+ *                             type: object
+ *                             description: "Données complètes du formulaire"
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                           example: 1
+ *                         limite:
+ *                           type: integer
+ *                           example: 20
+ *                         total:
+ *                           type: integer
+ *                           example: 5
+ *                         pages_total:
+ *                           type: integer
+ *                           example: 1
+ *       401:
+ *         description: Non autorisé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Accès refusé (pas secrétaire)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/formulaires-admin', 
+  authentifierJWT, 
+  verifierRoleSecretaire, 
+  controleurSecretaire.listerFormulairesAdmin
+);
+
+/**
+ * @swagger
+ * /api/secretaire/approuver-formulaire-admin:
+ *   post:
+ *     summary: Approuver un formulaire personnel d'administrateur
+ *     description: |
+ *       Permet au secrétariat d'approuver un formulaire personnel soumis par un administrateur.
+ *       L'approbation valide les informations personnelles mais n'affecte pas la capacité de connexion.
+ *     tags: [Secretary]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [id_formulaire]
+ *             properties:
+ *               id_formulaire:
+ *                 type: integer
+ *                 description: ID du formulaire administrateur à approuver
+ *                 example: 1
+ *           example:
+ *             id_formulaire: 1
+ *     responses:
+ *       200:
+ *         description: Formulaire personnel administrateur approuvé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Formulaire personnel administrateur approuvé avec succès"
+ *                 formulaire:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     type:
+ *                       type: string
+ *                       example: "ADMIN_PERSONNEL"
+ *                     utilisateur:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         nom_complet:
+ *                           type: string
+ *                           example: "Jean Claude MBONGO"
+ *                         role:
+ *                           type: string
+ *                           example: "PRESIDENT"
+ *                     statut:
+ *                       type: string
+ *                       example: "APPROUVE"
+ *                     date_approbation:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-01-15T10:30:00Z"
+ *                 actions_effectuees:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example:
+ *                     - "✅ Formulaire personnel administrateur approuvé"
+ *                     - "📋 Informations personnelles validées"
+ *                     - "🔐 Accès à l'application maintenu (pas d'impact sur la connexion)"
+ *                     - "📧 Notification envoyée à l'administrateur"
+ *                 impact_connexion:
+ *                   type: object
+ *                   properties:
+ *                     peut_se_connecter:
+ *                       type: boolean
+ *                       example: true
+ *                     acces_application:
+ *                       type: string
+ *                       example: "COMPLET"
+ *                     message:
+ *                       type: string
+ *                       example: "L'approbation n'affecte pas la capacité de connexion de l'administrateur"
+ *       400:
+ *         description: Données invalides ou formulaire non en attente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Non autorisé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Accès refusé (pas secrétaire)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Formulaire administrateur non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/approuver-formulaire-admin', 
+  authentifierJWT, 
+  verifierRoleSecretaire, 
+  generalLimiter,
+  controleurSecretaire.approuverFormulaireAdmin
+);
+
+/**
+ * @swagger
+ * /api/secretaire/rejeter-formulaire-admin:
+ *   post:
+ *     summary: Rejeter un formulaire personnel d'administrateur
+ *     description: |
+ *       Permet au secrétariat de rejeter un formulaire personnel soumis par un administrateur.
+ *       Le rejet documente les raisons mais n'affecte pas la capacité de connexion.
+ *     tags: [Secretary]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [id_formulaire, raison]
+ *             properties:
+ *               id_formulaire:
+ *                 type: integer
+ *                 description: ID du formulaire administrateur à rejeter
+ *                 example: 1
+ *               raison:
+ *                 type: string
+ *                 description: Raison principale du rejet
+ *                 example: "Informations manquantes dans le formulaire"
+ *               categorie_rejet:
+ *                 type: string
+ *                 description: Catégorie du rejet
+ *                 example: "DOCUMENTS_INCOMPLETS"
+ *               suggestions:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Suggestions pour corriger le formulaire
+ *                 example: ["Vérifiez que tous les documents sont clairs", "Assurez-vous que les informations sont complètes"]
+ *           example:
+ *             id_formulaire: 1
+ *             raison: "Informations manquantes dans le formulaire"
+ *             categorie_rejet: "DOCUMENTS_INCOMPLETS"
+ *             suggestions: ["Vérifiez que tous les documents sont clairs", "Assurez-vous que les informations sont complètes"]
+ *     responses:
+ *       200:
+ *         description: Formulaire personnel administrateur rejeté
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Formulaire personnel administrateur rejeté"
+ *                 formulaire:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     type:
+ *                       type: string
+ *                       example: "ADMIN_PERSONNEL"
+ *                     utilisateur:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         nom_complet:
+ *                           type: string
+ *                           example: "Jean Claude MBONGO"
+ *                         role:
+ *                           type: string
+ *                           example: "PRESIDENT"
+ *                     statut:
+ *                       type: string
+ *                       example: "REJETE"
+ *                     date_rejet:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-01-15T10:30:00Z"
+ *                 rejet:
+ *                   type: object
+ *                   properties:
+ *                     raison_principale:
+ *                       type: string
+ *                       example: "Informations manquantes dans le formulaire"
+ *                     categorie:
+ *                       type: string
+ *                       example: "DOCUMENTS_INCOMPLETS"
+ *                     suggestions:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example: ["Vérifiez que tous les documents sont clairs", "Assurez-vous que les informations sont complètes"]
+ *                 actions_effectuees:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example:
+ *                     - "❌ Formulaire personnel administrateur rejeté"
+ *                     - "📋 Raison du rejet documentée"
+ *                     - "🔐 Accès à l'application maintenu (pas d'impact sur la connexion)"
+ *                     - "📧 Notification envoyée à l'administrateur"
+ *                 impact_connexion:
+ *                   type: object
+ *                   properties:
+ *                     peut_se_connecter:
+ *                       type: boolean
+ *                       example: true
+ *                     acces_application:
+ *                       type: string
+ *                       example: "COMPLET"
+ *                     message:
+ *                       type: string
+ *                       example: "Le rejet n'affecte pas la capacité de connexion de l'administrateur"
+ *       400:
+ *         description: Données invalides ou formulaire non en attente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Non autorisé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Accès refusé (pas secrétaire)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Formulaire administrateur non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/rejeter-formulaire-admin', 
+  authentifierJWT, 
+  verifierRoleSecretaire, 
+  generalLimiter,
+  controleurSecretaire.rejeterFormulaireAdmin
+);
+
 module.exports = router;
