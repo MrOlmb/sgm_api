@@ -212,11 +212,21 @@ const verifierRoleAdmin = verifierRole('PRESIDENT', 'SECRETAIRE_GENERALE');
  *                       type: string
  *                       format: uri
  *                       example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877544/formulaire_admin_personnel.pdf"
+ *                     photo_profil_url:
+ *                       type: string
+ *                       format: uri
+ *                       description: URL Cloudinary de la photo de profil (optionnel)
+ *                       example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877544/selfie_admin.jpg"
  *                     selfie_photo_url:
  *                       type: string
  *                       format: uri
  *                       description: URL Cloudinary de la photo selfie (optionnel)
  *                       example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877544/selfie_admin.jpg"
+ *                     signature_url:
+ *                       type: string
+ *                       format: uri
+ *                       description: URL Cloudinary de la signature (optionnel)
+ *                       example: "https://res.cloudinary.com/dtqxhyqtp/image/upload/v1755877544/signature_admin.png"
  *                 prochaines_etapes:
  *                   type: array
  *                   items:

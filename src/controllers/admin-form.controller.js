@@ -165,6 +165,7 @@ class AdminFormController {
             nombre_enfants: donneesValidees.nombre_enfants,
             
             // Photos et signature
+            photo_profil_url: donneesValidees.selfie_photo_url, // Map selfie to photo_profil for consistency
             selfie_photo_url: donneesValidees.selfie_photo_url,
             signature_url: donneesValidees.signature_url,
             commentaire: donneesValidees.commentaire,
@@ -205,6 +206,7 @@ class AdminFormController {
           nombre_enfants: donneesValidees.nombre_enfants,
           
           // Photos et signature
+          photo_profil_url: donneesValidees.selfie_photo_url, // Map selfie to photo_profil for consistency
           selfie_photo_url: donneesValidees.selfie_photo_url,
           signature_url: donneesValidees.signature_url,
           commentaire: donneesValidees.commentaire,
@@ -242,7 +244,9 @@ class AdminFormController {
           telephone: donneesValidees.telephone,
           date_soumission: formulaireAdhesion.cree_le,
           url_fiche_formulaire: donneesValidees.url_image_formulaire,
-          selfie_photo_url: donneesValidees.selfie_photo_url
+          photo_profil_url: donneesValidees.selfie_photo_url,
+          selfie_photo_url: donneesValidees.selfie_photo_url,
+          signature_url: donneesValidees.signature_url
         },
         prochaines_etapes: [
           '✅ Votre formulaire personnel a été soumis avec succès',

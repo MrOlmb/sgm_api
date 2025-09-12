@@ -2082,7 +2082,10 @@ class ControleurSecretaire {
               role: true,
               email: true,
               telephone: true,
-              statut: true
+              statut: true,
+              photo_profil_url: true,
+              selfie_photo_url: true,
+              signature_url: true
             }
           }
         },
@@ -2120,7 +2123,10 @@ class ControleurSecretaire {
               nom_utilisateur: formulaire.utilisateur.nom_utilisateur,
               role: formulaire.utilisateur.role,
               email: formulaire.utilisateur.email,
-              telephone: formulaire.utilisateur.telephone
+              telephone: formulaire.utilisateur.telephone,
+              photo_profil_url: formulaire.utilisateur.photo_profil_url,
+              selfie_photo_url: formulaire.utilisateur.selfie_photo_url,
+              signature_url: formulaire.utilisateur.signature_url
             },
             statut: formulaire.utilisateur.statut,
             date_soumission: formulaire.cree_le,
