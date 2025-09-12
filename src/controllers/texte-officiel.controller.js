@@ -17,10 +17,10 @@ class TexteOfficielController {
       const donneesValidees = creerTexteOfficielSchema.parse(req.body);
       const utilisateurId = req.utilisateur.id;
 
-      // Vérifier que l'utilisateur est secrétaire général
-      if (req.utilisateur.role !== 'SECRETAIRE_GENERALE') {
+      // Vérifier que l'utilisateur est administrateur (Président ou Secrétaire Général)
+      if (!['PRESIDENT', 'SECRETAIRE_GENERALE'].includes(req.utilisateur.role)) {
         return res.status(403).json({
-          erreur: 'Seul le Secrétaire Général peut uploader des textes officiels',
+          erreur: 'Seuls les administrateurs peuvent uploader des textes officiels',
           code: 'ACCES_REFUSE'
         });
       }
@@ -322,10 +322,10 @@ class TexteOfficielController {
       const donneesValidees = mettreAJourTexteOfficielSchema.parse(req.body);
       const utilisateurId = req.utilisateur.id;
 
-      // Vérifier que l'utilisateur est secrétaire général
-      if (req.utilisateur.role !== 'SECRETAIRE_GENERALE') {
+      // Vérifier que l'utilisateur est administrateur (Président ou Secrétaire Général)
+      if (!['PRESIDENT', 'SECRETAIRE_GENERALE'].includes(req.utilisateur.role)) {
         return res.status(403).json({
-          erreur: 'Seul le Secrétaire Général peut modifier les textes officiels',
+          erreur: 'Seuls les administrateurs peuvent modifier les textes officiels',
           code: 'ACCES_REFUSE'
         });
       }
@@ -432,10 +432,10 @@ class TexteOfficielController {
       const { id } = idDocumentSchema.parse({ id: req.params.id });
       const utilisateurId = req.utilisateur.id;
 
-      // Vérifier que l'utilisateur est secrétaire général
-      if (req.utilisateur.role !== 'SECRETAIRE_GENERALE') {
+      // Vérifier que l'utilisateur est administrateur (Président ou Secrétaire Général)
+      if (!['PRESIDENT', 'SECRETAIRE_GENERALE'].includes(req.utilisateur.role)) {
         return res.status(403).json({
-          erreur: 'Seul le Secrétaire Général peut supprimer les textes officiels',
+          erreur: 'Seuls les administrateurs peuvent supprimer les textes officiels',
           code: 'ACCES_REFUSE'
         });
       }
@@ -499,14 +499,14 @@ class TexteOfficielController {
   }
 
   /**
-   * Obtenir les statistiques des textes officiels (SG seulement)
+   * Obtenir les statistiques des textes officiels (Admin seulement)
    */
   async obtenirStatistiques(req, res) {
     try {
-      // Vérifier que l'utilisateur est secrétaire général
-      if (req.utilisateur.role !== 'SECRETAIRE_GENERALE') {
+      // Vérifier que l'utilisateur est administrateur (Président ou Secrétaire Général)
+      if (!['PRESIDENT', 'SECRETAIRE_GENERALE'].includes(req.utilisateur.role)) {
         return res.status(403).json({
-          erreur: 'Seul le Secrétaire Général peut consulter les statistiques',
+          erreur: 'Seuls les administrateurs peuvent consulter les statistiques',
           code: 'ACCES_REFUSE'
         });
       }

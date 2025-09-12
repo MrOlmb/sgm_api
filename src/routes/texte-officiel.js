@@ -1,16 +1,19 @@
 const express = require('express');
 const texteOfficielController = require('../controllers/texte-officiel.controller');
-const { authentifierJWT } = require('../middleware/auth-local');
+const { authentifierJWT, verifierRole } = require('../middleware/auth-local');
 const { generalLimiter } = require('../middleware/security');
 
 const router = express.Router();
+
+// Middleware pour vérifier que l'utilisateur est administrateur (PRESIDENT ou SECRETAIRE_GENERALE)
+const verifierRoleAdmin = verifierRole('PRESIDENT', 'SECRETAIRE_GENERALE');
 
 /**
  * @swagger
  * /api/textes-officiels:
  *   post:
- *     summary: Uploader un texte officiel (SG seulement)
- *     description: Permet au Secrétaire Général d'uploader un nouveau texte officiel avec lien Cloudinary
+ *     summary: Uploader un texte officiel (Admin seulement)
+ *     description: Permet aux administrateurs (Président et Secrétaire Général) d'uploader un nouveau texte officiel avec lien Cloudinary
  *     tags: [Textes Officiels]
  *     security:
  *       - BearerAuth: []
@@ -34,20 +37,20 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *       403:
- *         description: Accès refusé - Seul le SG peut uploader
+ *         description: Accès refusé - Seuls les administrateurs peuvent uploader
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', authentifierJWT, generalLimiter, texteOfficielController.creerTexteOfficiel);
+router.post('/', generalLimiter, authentifierJWT, verifierRoleAdmin, texteOfficielController.creerTexteOfficiel);
 
 /**
  * @swagger
  * /api/textes-officiels:
  *   get:
  *     summary: Lister les textes officiels
- *     description: Récupérer la liste des textes officiels avec filtres et pagination (accessible aux membres)
+ *     description: Récupérer la liste des textes officiels avec filtres et pagination (accessible à tous les utilisateurs authentifiés)
  *     tags: [Textes Officiels]
  *     security:
  *       - BearerAuth: []
@@ -93,14 +96,14 @@ router.post('/', authentifierJWT, generalLimiter, texteOfficielController.creerT
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', authentifierJWT, generalLimiter, texteOfficielController.listerTextesOfficiels);
+router.get('/', generalLimiter, authentifierJWT, texteOfficielController.listerTextesOfficiels);
 
 /**
  * @swagger
  * /api/textes-officiels/statistiques:
  *   get:
- *     summary: Obtenir les statistiques des textes officiels (SG seulement)
- *     description: Récupérer les statistiques des documents par type et totaux
+ *     summary: Obtenir les statistiques des textes officiels (Admin seulement)
+ *     description: Récupérer les statistiques des documents par type et totaux (réservé aux administrateurs)
  *     tags: [Textes Officiels]
  *     security:
  *       - BearerAuth: []
@@ -112,20 +115,20 @@ router.get('/', authentifierJWT, generalLimiter, texteOfficielController.listerT
  *             schema:
  *               $ref: '#/components/schemas/StatistiquesTextesOfficielsResponse'
  *       403:
- *         description: Accès refusé - Seul le SG peut consulter
+ *         description: Accès refusé - Seuls les administrateurs peuvent consulter les statistiques
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/statistiques', authentifierJWT, generalLimiter, texteOfficielController.obtenirStatistiques);
+router.get('/statistiques', generalLimiter, authentifierJWT, verifierRoleAdmin, texteOfficielController.obtenirStatistiques);
 
 /**
  * @swagger
  * /api/textes-officiels/{id}:
  *   get:
  *     summary: Obtenir un texte officiel par ID
- *     description: Récupérer les détails d'un texte officiel spécifique (accessible aux membres)
+ *     description: Récupérer les détails d'un texte officiel spécifique (accessible à tous les utilisateurs authentifiés)
  *     tags: [Textes Officiels]
  *     security:
  *       - BearerAuth: []
@@ -150,14 +153,14 @@ router.get('/statistiques', authentifierJWT, generalLimiter, texteOfficielContro
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id', authentifierJWT, generalLimiter, texteOfficielController.obtenirTexteOfficiel);
+router.get('/:id', generalLimiter, authentifierJWT, texteOfficielController.obtenirTexteOfficiel);
 
 /**
  * @swagger
  * /api/textes-officiels/{id}:
  *   put:
- *     summary: Mettre à jour un texte officiel (SG seulement)
- *     description: Modifier les informations d'un texte officiel existant
+ *     summary: Mettre à jour un texte officiel (Admin seulement)
+ *     description: Modifier les informations d'un texte officiel existant (réservé aux administrateurs)
  *     tags: [Textes Officiels]
  *     security:
  *       - BearerAuth: []
@@ -188,7 +191,7 @@ router.get('/:id', authentifierJWT, generalLimiter, texteOfficielController.obte
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *       403:
- *         description: Accès refusé - Seul le SG peut modifier
+ *         description: Accès refusé - Seuls les administrateurs peuvent modifier
  *         content:
  *           application/json:
  *             schema:
@@ -200,14 +203,14 @@ router.get('/:id', authentifierJWT, generalLimiter, texteOfficielController.obte
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', authentifierJWT, generalLimiter, texteOfficielController.mettreAJourTexteOfficiel);
+router.put('/:id', generalLimiter, authentifierJWT, verifierRoleAdmin, texteOfficielController.mettreAJourTexteOfficiel);
 
 /**
  * @swagger
  * /api/textes-officiels/{id}:
  *   delete:
- *     summary: Supprimer un texte officiel (SG seulement)
- *     description: Désactiver un texte officiel (suppression logique)
+ *     summary: Supprimer un texte officiel (Admin seulement)
+ *     description: Désactiver un texte officiel (suppression logique, réservé aux administrateurs)
  *     tags: [Textes Officiels]
  *     security:
  *       - BearerAuth: []
@@ -230,7 +233,7 @@ router.put('/:id', authentifierJWT, generalLimiter, texteOfficielController.mett
  *                   type: string
  *                   example: Texte officiel supprimé avec succès
  *       403:
- *         description: Accès refusé - Seul le SG peut supprimer
+ *         description: Accès refusé - Seuls les administrateurs peuvent supprimer
  *         content:
  *           application/json:
  *             schema:
@@ -242,6 +245,6 @@ router.put('/:id', authentifierJWT, generalLimiter, texteOfficielController.mett
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/:id', authentifierJWT, generalLimiter, texteOfficielController.supprimerTexteOfficiel);
+router.delete('/:id', generalLimiter, authentifierJWT, verifierRoleAdmin, texteOfficielController.supprimerTexteOfficiel);
 
 module.exports = router;
