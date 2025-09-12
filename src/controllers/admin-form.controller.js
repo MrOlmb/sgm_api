@@ -306,14 +306,22 @@ class AdminFormController {
         });
       }
 
-      // Pour les formulaires admin, pas de statut de rejet car ils n'affectent pas la connexion
+      // Pour les formulaires admin, déterminer le statut basé sur l'existence du formulaire
+      let statut = 'NON_SOUMIS';
       let detailsRejet = null;
+
+      if (formulairePersonnel) {
+        // Pour les admins, le formulaire est toujours considéré comme "EN_ATTENTE" 
+        // car il n'affecte pas leur capacité de connexion
+        statut = 'EN_ATTENTE';
+      }
 
       res.json({
         message: 'Statut du formulaire personnel récupéré',
         formulaire: {
           id: formulairePersonnel.id,
           type: 'ADMIN_PERSONNEL',
+          statut: statut,
           date_soumission: formulairePersonnel.cree_le,
           url_fiche_formulaire: formulairePersonnel.url_image_formulaire,
           version: formulairePersonnel.numero_version

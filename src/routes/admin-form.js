@@ -295,7 +295,7 @@ router.post('/formulaire-personnel', generalLimiter, authentifierJWT, verifierRo
  *                       example: "ADMIN_PERSONNEL"
  *                     statut:
  *                       type: string
- *                       enum: [EN_ATTENTE, APPROUVE, REJETE]
+ *                       enum: [NON_SOUMIS, EN_ATTENTE, APPROUVE, REJETE]
  *                       example: "EN_ATTENTE"
  *                     date_soumission:
  *                       type: string
