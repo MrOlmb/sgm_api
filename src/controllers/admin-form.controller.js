@@ -177,16 +177,14 @@ class AdminFormController {
       let isResoumission = false;
 
       if (formulaireEnCours && utilisateurAdmin.statut === 'REJETE') {
-        // Resoumission après rejet - mettre à jour le formulaire existant (comme pour les membres)
+        // Resoumission après rejet - mettre à jour le formulaire existant SANS incrémenter la version
+        // pour éviter les problèmes de contrainte unique
         isResoumission = true;
-        await prisma.formulaireAdhesion.updateMany({
-          where: { 
-            id_utilisateur: idAdmin,
-            est_version_active: true
-          },
+        formulaireAdhesion = await prisma.formulaireAdhesion.update({
+          where: { id: formulaireEnCours.id },
           data: {
             url_image_formulaire: donneesValidees.url_image_formulaire,
-            numero_version: { increment: 1 },
+            // NE PAS incrémenter numero_version pour éviter la contrainte unique
             donnees_snapshot: {
               // Informations personnelles
               prenoms: donneesValidees.prenoms,
@@ -219,16 +217,9 @@ class AdminFormController {
               type_formulaire: 'ADMIN_PERSONNEL',
               role_admin: roleAdmin,
               soumis_par: 'ADMIN_SELF',
-              date_resoumission: new Date().toISOString()
+              date_resoumission: new Date().toISOString(),
+              resoumission_count: (formulaireEnCours.donnees_snapshot?.resoumission_count || 0) + 1
             }
-          }
-        });
-        
-        // Récupérer le formulaire mis à jour pour la réponse
-        formulaireAdhesion = await prisma.formulaireAdhesion.findFirst({
-          where: { 
-            id_utilisateur: idAdmin,
-            est_version_active: true
           }
         });
       } else {
@@ -360,7 +351,8 @@ class AdminFormController {
           signature_url: donneesValidees.signature_url,
           ...(isResoumission && { 
             numero_version: formulaireAdhesion.numero_version,
-            date_resoumission: new Date().toISOString()
+            date_resoumission: new Date().toISOString(),
+            resoumission_count: formulaireAdhesion.donnees_snapshot?.resoumission_count || 1
           })
         },
         prochaines_etapes: isResoumission ? [
