@@ -89,6 +89,15 @@ npm run lint          # Run ESLint
 - **Security features** - 1-hour token expiration, strong password validation
 - **Consolidated endpoints** - simplified from 7 to 4 endpoints in `/api/auth/`
 
+**Profile Amendment System:**
+- **Purpose** - allows approved members to update their information after initial approval
+- **Workflow** - member submits amendment → secretary reviews → approval applies changes to profile
+- **Amendment types**: MINEUR (address, phone), MAJEUR (name, documents), FAMILIAL (spouse, children), PROFESSIONNEL (job, employer)
+- **Status preservation** - member remains APPROVED throughout amendment process
+- **Audit trail** - complete history of all profile changes with justifications
+- **Smart conflict detection** - only one amendment per member at a time
+- **Endpoints**: `/api/amendment/soumettre`, `/api/amendment/mes-amendements`, `/api/amendment/en-attente`, `/api/amendment/{id}/traiter`
+
 ### Database Schema Key Points
 - **User model** contains both Clerk sync data and registration details
 - **Status field:** PENDING → APPROVED/REJECTED workflow
@@ -103,6 +112,7 @@ npm run lint          # Run ESLint
 - **Registration endpoint:** Complete member registration with file uploads
 - **Secretary endpoints:** Member management, form approval/rejection with email notifications
 - **Member endpoints:** Profile access, membership cards, member directory
+- **Amendment endpoints:** Profile amendment system for approved members to update their information
 - Role-based access control throughout
 
 ### Security Features

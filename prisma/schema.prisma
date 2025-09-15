@@ -80,6 +80,8 @@ model Utilisateur {
   tokens_recuperation    TokenRecuperation[]
   textes_officiels       TexteOfficiel[]
   categories_texte_officiel CategorieTexteOfficiel[]
+  amendments_soumis      AmendmentProfil[] @relation("MembreAmendments")
+  amendments_traites     AmendmentProfil[] @relation("SecretaireAmendments")
 }
 
 model Signature {
@@ -169,6 +171,42 @@ model CategorieTexteOfficiel {
   textes_officiels   TexteOfficiel[] // Textes officiels de cette catégorie
 }
 
+model AmendmentProfil {
+  id                    Int       @id @default(autoincrement())
+  id_membre             Int       // ID du membre qui soumet l'amendement
+  numero_reference      String    @unique // Référence unique (ex: "AMD-2025-001")
+  type_amendment        TypeAmendment // Type d'amendement
+  statut                StatutAmendment @default(EN_ATTENTE)
+  
+  // Données avant modification (snapshot)
+  donnees_avant         Json      // État actuel du profil avant amendement
+  
+  // Données demandées (nouvelles valeurs)
+  donnees_demandees     Json      // Nouvelles données demandées par le membre
+  
+  // Champs modifiés (pour faciliter l'affichage)
+  champs_modifies       String[]  // Liste des champs qui vont changer
+  
+  // Justification et documents
+  raison_modification   String    // Raison de la modification (ex: "Déménagement", "Mariage")
+  documents_justificatifs String[] // URLs Cloudinary des documents de justification
+  commentaire_membre    String?   // Commentaire optionnel du membre
+  
+  // Traitement par le secrétaire
+  traite_par            Int?      // ID du secrétaire qui traite
+  traite_le             DateTime? // Date de traitement
+  commentaire_secretaire String?  // Commentaire du secrétaire
+  raison_rejet          String?   // Raison du rejet si applicable
+  
+  // Métadonnées
+  soumis_le             DateTime  @default(now())
+  modifie_le            DateTime  @updatedAt
+  
+  // Relations
+  membre                Utilisateur @relation("MembreAmendments", fields: [id_membre], references: [id])
+  secretaire            Utilisateur? @relation("SecretaireAmendments", fields: [traite_par], references: [id])
+}
+
 enum Statut {
   EN_ATTENTE
   APPROUVE
@@ -179,6 +217,20 @@ enum Role {
   MEMBRE
   SECRETAIRE_GENERALE
   PRESIDENT
+}
+
+enum TypeAmendment {
+  MINEUR             // Changements mineurs (adresse, téléphone, email)
+  MAJEUR             // Changements majeurs (nom, documents officiels)
+  FAMILIAL           // Changements familiaux (conjoint, enfants)
+  PROFESSIONNEL      // Changements professionnels (employeur, profession)
+}
+
+enum StatutAmendment {
+  EN_ATTENTE         // En attente de traitement
+  APPROUVE           // Approuvé et appliqué
+  REJETE             // Rejeté par le secrétaire
+  ANNULE             // Annulé par le membre
 }
 
 

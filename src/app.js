@@ -16,6 +16,7 @@ const texteOfficielRoutes = require('./routes/texte-officiel'); // Routes textes
 const categorieTexteOfficielRoutes = require('./routes/categories-texte-officiel'); // Routes catégories textes officiels
 const signatureRoutes = require('./routes/signature'); // Routes signatures Cloudinary
 const adminFormRoutes = require('./routes/admin-form'); // Routes formulaires personnels administrateurs
+const amendmentRoutes = require('./routes/amendment'); // Routes amendements de profil
 
 // Swagger documentation
 const { specs, swaggerUi } = require('./config/swagger');
@@ -73,6 +74,7 @@ app.use('/api/textes-officiels', texteOfficielRoutes); // Routes textes officiel
 app.use('/api/categories-texte-officiel', categorieTexteOfficielRoutes); // Routes catégories textes officiels
 app.use('/api/signature', signatureRoutes); // Routes signatures Cloudinary
 app.use('/api/admin', adminFormRoutes); // Routes formulaires personnels administrateurs
+app.use('/api/amendment', amendmentRoutes); // Routes amendements de profil
 
 // Swagger documentation routes
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
