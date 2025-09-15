@@ -114,21 +114,30 @@ class AdminFormController {
         }
       });
 
+      // Si un formulaire existe, vérifier le statut de l'utilisateur
       if (formulaireEnCours) {
-        const businessError = ErrorHandler.createBusinessError(
-          'Vous avez déjà un formulaire personnel en cours de validation',
-          'FORMULAIRE_EN_COURS',
-          409,
-          [
-            'Attendez la validation de votre formulaire actuel',
-            'Ou contactez le secrétariat pour plus d\'informations'
-          ]
-        );
-        const context = {
-          operation: 'admin_form_already_pending',
-          user_id: idAdmin
-        };
-        return ErrorHandler.formatBusinessError(businessError, res, context);
+        // Si l'utilisateur est rejeté, permettre la resoumission
+        if (utilisateurAdmin.statut === 'REJETE') {
+          logger.info(`Resoumission autorisée pour admin rejeté: ${utilisateurAdmin.prenoms} ${utilisateurAdmin.nom} (ID: ${idAdmin})`);
+          // Continuer avec la resoumission - on va mettre à jour le formulaire existant
+        } else if (utilisateurAdmin.statut === 'EN_ATTENTE') {
+          // Si l'utilisateur est en attente, bloquer la soumission
+          const businessError = ErrorHandler.createBusinessError(
+            'Vous avez déjà un formulaire personnel en cours de validation',
+            'FORMULAIRE_EN_COURS',
+            409,
+            [
+              'Attendez la validation de votre formulaire actuel',
+              'Ou contactez le secrétariat pour plus d\'informations'
+            ]
+          );
+          const context = {
+            operation: 'admin_form_already_pending',
+            user_id: idAdmin
+          };
+          return ErrorHandler.formatBusinessError(businessError, res, context);
+        }
+        // Si l'utilisateur est APPROUVE, on ne devrait pas arriver ici car il n'aurait pas besoin de resoumettre
       }
 
       // Convertir les dates françaises en objets Date
@@ -136,48 +145,98 @@ class AdminFormController {
       const dateEntreeCongo = convertirDateFrancaise(donneesValidees.date_entree_congo);
       const dateEmissionPiece = convertirDateFrancaise(donneesValidees.date_emission_piece);
 
-      // Créer le formulaire d'adhésion pour l'administrateur
-      const formulaireAdhesion = await prisma.formulaireAdhesion.create({
-        data: {
-          id_utilisateur: idAdmin,
-          numero_version: 1,
-          url_image_formulaire: donneesValidees.url_image_formulaire,
-          donnees_snapshot: {
-            // Informations personnelles
-            prenoms: donneesValidees.prenoms,
-            nom: donneesValidees.nom,
-            date_naissance: donneesValidees.date_naissance,
-            lieu_naissance: donneesValidees.lieu_naissance,
-            adresse: donneesValidees.adresse,
-            profession: donneesValidees.profession,
-            ville_residence: donneesValidees.ville_residence,
-            date_entree_congo: donneesValidees.date_entree_congo,
-            employeur_ecole: donneesValidees.employeur_ecole,
-            telephone: donneesValidees.telephone,
-            
-            // Informations carte consulaire
-            numero_carte_consulaire: donneesValidees.numero_carte_consulaire,
-            date_emission_piece: donneesValidees.date_emission_piece,
-            
-            // Informations familiales
-            prenom_conjoint: donneesValidees.prenom_conjoint,
-            nom_conjoint: donneesValidees.nom_conjoint,
-            nombre_enfants: donneesValidees.nombre_enfants,
-            
-            // Photos et signature
-            photo_profil_url: donneesValidees.selfie_photo_url, // Map selfie to photo_profil for consistency
-            selfie_photo_url: donneesValidees.selfie_photo_url,
-            signature_url: donneesValidees.signature_url,
-            commentaire: donneesValidees.commentaire,
-            
-            // Métadonnées
-            type_formulaire: 'ADMIN_PERSONNEL',
-            role_admin: roleAdmin,
-            soumis_par: 'ADMIN_SELF'
-          },
-          est_version_active: true
-        }
-      });
+      // Créer ou mettre à jour le formulaire d'adhésion pour l'administrateur
+      let formulaireAdhesion;
+      let isResoumission = false;
+
+      if (formulaireEnCours && utilisateurAdmin.statut === 'REJETE') {
+        // Resoumission après rejet - mettre à jour le formulaire existant
+        isResoumission = true;
+        formulaireAdhesion = await prisma.formulaireAdhesion.update({
+          where: { id: formulaireEnCours.id },
+          data: {
+            numero_version: { increment: 1 },
+            url_image_formulaire: donneesValidees.url_image_formulaire,
+            donnees_snapshot: {
+              // Informations personnelles
+              prenoms: donneesValidees.prenoms,
+              nom: donneesValidees.nom,
+              date_naissance: donneesValidees.date_naissance,
+              lieu_naissance: donneesValidees.lieu_naissance,
+              adresse: donneesValidees.adresse,
+              profession: donneesValidees.profession,
+              ville_residence: donneesValidees.ville_residence,
+              date_entree_congo: donneesValidees.date_entree_congo,
+              employeur_ecole: donneesValidees.employeur_ecole,
+              telephone: donneesValidees.telephone,
+              
+              // Informations carte consulaire
+              numero_carte_consulaire: donneesValidees.numero_carte_consulaire,
+              date_emission_piece: donneesValidees.date_emission_piece,
+              
+              // Informations familiales
+              prenom_conjoint: donneesValidees.prenom_conjoint,
+              nom_conjoint: donneesValidees.nom_conjoint,
+              nombre_enfants: donneesValidees.nombre_enfants,
+              
+              // Photos et signature
+              photo_profil_url: donneesValidees.selfie_photo_url, // Map selfie to photo_profil for consistency
+              selfie_photo_url: donneesValidees.selfie_photo_url,
+              signature_url: donneesValidees.signature_url,
+              commentaire: donneesValidees.commentaire,
+              
+              // Métadonnées
+              type_formulaire: 'ADMIN_PERSONNEL',
+              role_admin: roleAdmin,
+              soumis_par: 'ADMIN_SELF',
+              date_resoumission: new Date().toISOString()
+            }
+          }
+        });
+      } else {
+        // Nouvelle soumission - créer un nouveau formulaire
+        formulaireAdhesion = await prisma.formulaireAdhesion.create({
+          data: {
+            id_utilisateur: idAdmin,
+            numero_version: 1,
+            url_image_formulaire: donneesValidees.url_image_formulaire,
+            donnees_snapshot: {
+              // Informations personnelles
+              prenoms: donneesValidees.prenoms,
+              nom: donneesValidees.nom,
+              date_naissance: donneesValidees.date_naissance,
+              lieu_naissance: donneesValidees.lieu_naissance,
+              adresse: donneesValidees.adresse,
+              profession: donneesValidees.profession,
+              ville_residence: donneesValidees.ville_residence,
+              date_entree_congo: donneesValidees.date_entree_congo,
+              employeur_ecole: donneesValidees.employeur_ecole,
+              telephone: donneesValidees.telephone,
+              
+              // Informations carte consulaire
+              numero_carte_consulaire: donneesValidees.numero_carte_consulaire,
+              date_emission_piece: donneesValidees.date_emission_piece,
+              
+              // Informations familiales
+              prenom_conjoint: donneesValidees.prenom_conjoint,
+              nom_conjoint: donneesValidees.nom_conjoint,
+              nombre_enfants: donneesValidees.nombre_enfants,
+              
+              // Photos et signature
+              photo_profil_url: donneesValidees.selfie_photo_url, // Map selfie to photo_profil for consistency
+              selfie_photo_url: donneesValidees.selfie_photo_url,
+              signature_url: donneesValidees.signature_url,
+              commentaire: donneesValidees.commentaire,
+              
+              // Métadonnées
+              type_formulaire: 'ADMIN_PERSONNEL',
+              role_admin: roleAdmin,
+              soumis_par: 'ADMIN_SELF'
+            },
+            est_version_active: true
+          }
+        });
+      }
 
       // Mettre à jour l'utilisateur administrateur avec les nouvelles données
       // (sans affecter son statut de connexion)
@@ -213,6 +272,13 @@ class AdminFormController {
           
           // Marquer comme ayant soumis un formulaire personnel
           a_soumis_formulaire: true,
+          // Si c'est une resoumission après rejet, remettre le statut à EN_ATTENTE
+          ...(isResoumission && { 
+            statut: 'EN_ATTENTE',
+            raison_rejet: null, // Effacer la raison du rejet précédent
+            rejete_le: null,
+            rejete_par: null
+          }),
           modifie_le: new Date()
         }
       });
@@ -221,34 +287,51 @@ class AdminFormController {
       await prisma.journalAudit.create({
         data: {
           id_utilisateur: idAdmin,
-          action: 'SOUMETTRE_FORMULAIRE_PERSONNEL_ADMIN',
+          action: isResoumission ? 'RESOUMISSION_FORMULAIRE_PERSONNEL_ADMIN' : 'SOUMETTRE_FORMULAIRE_PERSONNEL_ADMIN',
           details: { 
             role_admin: roleAdmin,
             formulaire_id: formulaireAdhesion.id,
-            type_formulaire: 'ADMIN_PERSONNEL'
+            type_formulaire: 'ADMIN_PERSONNEL',
+            is_resoumission: isResoumission,
+            ...(isResoumission && { 
+              ancien_statut: 'REJETE',
+              nouveau_statut: 'EN_ATTENTE'
+            })
           },
           adresse_ip: req.ip,
           agent_utilisateur: req.get('User-Agent')
         }
       });
 
-      logger.info(`Formulaire personnel soumis par ${roleAdmin} ${donneesValidees.prenoms} ${donneesValidees.nom} (ID: ${idAdmin})`);
+      logger.info(`${isResoumission ? 'Resoumission' : 'Soumission'} de formulaire personnel par ${roleAdmin} ${donneesValidees.prenoms} ${donneesValidees.nom} (ID: ${idAdmin})`);
 
       res.json({
-        message: 'Formulaire personnel soumis avec succès',
+        message: isResoumission ? 'Formulaire personnel resoumis avec succès' : 'Formulaire personnel soumis avec succès',
         formulaire: {
           id: formulaireAdhesion.id,
           type: 'ADMIN_PERSONNEL',
           nom_complet: `${donneesValidees.prenoms} ${donneesValidees.nom}`,
           role_admin: roleAdmin,
           telephone: donneesValidees.telephone,
+          numero_adhesion: utilisateurMisAJour.numero_adhesion,
+          statut: utilisateurMisAJour.statut,
           date_soumission: formulaireAdhesion.cree_le,
           url_fiche_formulaire: donneesValidees.url_image_formulaire,
           photo_profil_url: donneesValidees.selfie_photo_url,
           selfie_photo_url: donneesValidees.selfie_photo_url,
-          signature_url: donneesValidees.signature_url
+          signature_url: donneesValidees.signature_url,
+          ...(isResoumission && { 
+            numero_version: formulaireAdhesion.numero_version,
+            date_resoumission: new Date().toISOString()
+          })
         },
-        prochaines_etapes: [
+        prochaines_etapes: isResoumission ? [
+          '✅ Votre formulaire personnel a été resoumis avec succès',
+          '🔄 Votre statut est maintenant EN_ATTENTE pour nouvelle validation',
+          '👩‍💼 Il sera examiné par le secrétariat dans les plus brefs délais',
+          '📧 Vous recevrez une notification dès qu\'une décision sera prise',
+          '🔐 Votre accès à l\'application reste inchangé pendant la validation'
+        ] : [
           '✅ Votre formulaire personnel a été soumis avec succès',
           '👩‍💼 Il sera examiné par le secrétariat dans les plus brefs délais',
           '📧 Vous recevrez une notification dès qu\'une décision sera prise',
@@ -258,7 +341,14 @@ class AdminFormController {
           peut_se_connecter: true,
           acces_application: 'COMPLET',
           message: 'Votre formulaire personnel n\'affecte pas votre capacité à utiliser l\'application'
-        }
+        },
+        ...(isResoumission && {
+          resoumission: {
+            ancien_statut: 'REJETE',
+            nouveau_statut: 'EN_ATTENTE',
+            message: 'Votre formulaire précédemment rejeté a été resoumis avec succès'
+          }
+        })
       });
 
     } catch (error) {
@@ -314,12 +404,19 @@ class AdminFormController {
       // Pour les formulaires admin, utiliser le statut de l'utilisateur
       let statut = 'NON_SOUMIS';
       let detailsRejet = null;
+      let utilisateurAdmin = null;
 
       if (formulairePersonnel) {
         // Récupérer le statut de l'utilisateur administrateur
-        const utilisateurAdmin = await prisma.utilisateur.findUnique({
+        utilisateurAdmin = await prisma.utilisateur.findUnique({
           where: { id: idAdmin },
-          select: { statut: true }
+          select: { 
+            statut: true,
+            numero_adhesion: true,
+            prenoms: true,
+            nom: true,
+            role: true
+          }
         });
         
         if (utilisateurAdmin) {
@@ -333,6 +430,9 @@ class AdminFormController {
           id: formulairePersonnel.id,
           type: 'ADMIN_PERSONNEL',
           statut: statut,
+          numero_adhesion: utilisateurAdmin?.numero_adhesion,
+          nom_complet: utilisateurAdmin ? `${utilisateurAdmin.prenoms} ${utilisateurAdmin.nom}` : null,
+          role_admin: utilisateurAdmin?.role,
           date_soumission: formulairePersonnel.cree_le,
           url_fiche_formulaire: formulairePersonnel.url_image_formulaire,
           version: formulairePersonnel.numero_version

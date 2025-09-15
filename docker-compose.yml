@@ -5,6 +5,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
+      - DATABASE_URL=postgresql://sgm_user:sgm_password@postgres:5432/sgm_db
     env_file:
       - .env
     depends_on:

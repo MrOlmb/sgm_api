@@ -2082,6 +2082,7 @@ class ControleurSecretaire {
               role: true,
               email: true,
               telephone: true,
+              numero_adhesion: true,
               statut: true,
               photo_profil_url: true,
               selfie_photo_url: true,
@@ -2124,6 +2125,7 @@ class ControleurSecretaire {
               role: formulaire.utilisateur.role,
               email: formulaire.utilisateur.email,
               telephone: formulaire.utilisateur.telephone,
+              numero_adhesion: formulaire.utilisateur.numero_adhesion,
               photo_profil_url: formulaire.utilisateur.photo_profil_url,
               selfie_photo_url: formulaire.utilisateur.selfie_photo_url,
               signature_url: formulaire.utilisateur.signature_url
