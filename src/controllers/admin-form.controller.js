@@ -89,7 +89,8 @@ class AdminFormController {
           nom_utilisateur: true,
           role: true,
           statut: true,
-          a_soumis_formulaire: true
+          a_soumis_formulaire: true,
+          numero_carte_consulaire: true // Ajouter pour vérification duplicate
         }
       });
 
@@ -99,6 +100,32 @@ class AdminFormController {
           user_id: idAdmin
         };
         return ErrorHandler.notFound(res, 'Utilisateur administrateur', context);
+      }
+
+      // Vérifier les doublons numéro de carte consulaire (si fourni et différent de l'actuel)
+      if (donneesValidees.numero_carte_consulaire && 
+          donneesValidees.numero_carte_consulaire !== utilisateurAdmin.numero_carte_consulaire) {
+        const verificationDoublon = await prisma.utilisateur.findFirst({
+          where: {
+            numero_carte_consulaire: donneesValidees.numero_carte_consulaire,
+            id: { not: idAdmin } // Exclure l'utilisateur actuel
+          }
+        });
+
+        if (verificationDoublon) {
+          const businessError = ErrorHandler.createBusinessError(
+            'Un membre avec ce numéro de carte consulaire existe déjà',
+            'NUMERO_CARTE_CONSULAIRE_EXISTE',
+            409,
+            ['Veuillez vérifier le numéro de carte consulaire fourni']
+          );
+          const context = {
+            operation: 'admin_duplicate_check',
+            user_id: idAdmin,
+            numero_carte_consulaire: donneesValidees.numero_carte_consulaire
+          };
+          return ErrorHandler.formatBusinessError(businessError, res, context);
+        }
       }
 
       // Vérifier si l'admin a déjà un formulaire en cours de validation
@@ -266,20 +293,20 @@ class AdminFormController {
           employeur_ecole: donneesValidees.employeur_ecole,
           telephone: donneesValidees.telephone,
           
-          // Informations carte consulaire
-          numero_carte_consulaire: donneesValidees.numero_carte_consulaire,
+          // Informations carte consulaire (éviter la contrainte d'unicité si valeur inchangée)
+          numero_carte_consulaire: donneesValidees.numero_carte_consulaire || null,
           date_emission_piece: dateEmissionPiece,
           
           // Informations familiales
-          prenom_conjoint: donneesValidees.prenom_conjoint,
-          nom_conjoint: donneesValidees.nom_conjoint,
-          nombre_enfants: donneesValidees.nombre_enfants,
+          prenom_conjoint: donneesValidees.prenom_conjoint || null,
+          nom_conjoint: donneesValidees.nom_conjoint || null,
+          nombre_enfants: donneesValidees.nombre_enfants || 0,
           
           // Photos et signature
-          photo_profil_url: donneesValidees.selfie_photo_url, // Map selfie to photo_profil for consistency
-          selfie_photo_url: donneesValidees.selfie_photo_url,
-          signature_url: donneesValidees.signature_url,
-          commentaire: donneesValidees.commentaire,
+          photo_profil_url: donneesValidees.selfie_photo_url || null, // Map selfie to photo_profil for consistency
+          selfie_photo_url: donneesValidees.selfie_photo_url || null,
+          signature_url: donneesValidees.signature_url || null,
+          commentaire: donneesValidees.commentaire || null,
           
           // Marquer comme ayant soumis un formulaire personnel
           a_soumis_formulaire: true,
