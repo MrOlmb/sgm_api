@@ -150,13 +150,16 @@ class AdminFormController {
       let isResoumission = false;
 
       if (formulaireEnCours && utilisateurAdmin.statut === 'REJETE') {
-        // Resoumission après rejet - mettre à jour le formulaire existant
+        // Resoumission après rejet - mettre à jour le formulaire existant (comme pour les membres)
         isResoumission = true;
-        formulaireAdhesion = await prisma.formulaireAdhesion.update({
-          where: { id: formulaireEnCours.id },
+        await prisma.formulaireAdhesion.updateMany({
+          where: { 
+            id_utilisateur: idAdmin,
+            est_version_active: true
+          },
           data: {
-            numero_version: { increment: 1 },
             url_image_formulaire: donneesValidees.url_image_formulaire,
+            numero_version: { increment: 1 },
             donnees_snapshot: {
               // Informations personnelles
               prenoms: donneesValidees.prenoms,
@@ -191,6 +194,14 @@ class AdminFormController {
               soumis_par: 'ADMIN_SELF',
               date_resoumission: new Date().toISOString()
             }
+          }
+        });
+        
+        // Récupérer le formulaire mis à jour pour la réponse
+        formulaireAdhesion = await prisma.formulaireAdhesion.findFirst({
+          where: { 
+            id_utilisateur: idAdmin,
+            est_version_active: true
           }
         });
       } else {
