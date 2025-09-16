@@ -301,13 +301,12 @@ class AdminFormController {
           
           // Marquer comme ayant soumis un formulaire personnel
           a_soumis_formulaire: true,
-          // Si c'est une resoumission après rejet, remettre le statut à EN_ATTENTE
-          ...(isResoumission && { 
-            statut: 'EN_ATTENTE',
-            raison_rejet: null, // Effacer la raison du rejet précédent
-            rejete_le: null,
-            rejete_par: null
-          }),
+          // BUSINESS RULE FIX: All users, including admins, must go through proper approval process
+          // Reset status to EN_ATTENTE when submitting any form (new or resubmission)
+          statut: 'EN_ATTENTE',
+          raison_rejet: null, // Effacer la raison du rejet précédent
+          rejete_le: null,
+          rejete_par: null,
           modifie_le: new Date()
         }
       });

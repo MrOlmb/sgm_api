@@ -780,6 +780,9 @@ class AdhesionController {
             selfie_photo_url: donneesValidees.selfie_photo_url || null,
             signature_url: donneesValidees.signature_url || null,
             commentaire: donneesValidees.commentaire || null,
+            // BUSINESS RULE FIX: All users must start with EN_ATTENTE status when submitting forms
+            // This ensures Presidents and Secretaires also go through the proper approval process
+            statut: 'EN_ATTENTE',
             a_soumis_formulaire: true, // Marquer comme formulaire soumis
             modifie_le: new Date()
           }
