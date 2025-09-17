@@ -183,11 +183,12 @@ router.get('/telecharger-formulaire', authentifierJWT, generalLimiter, membreCon
  * @swagger
  * /api/membre/annuaire:
  *   get:
- *     summary: 📋 Annuaire des membres (Membres approuvés seulement)
+ *     summary: 📋 Annuaire complet de l'association (Tous les membres et administrateurs)
  *     description: |
  *       **Accès restreint aux membres approuvés uniquement**
  *       
- *       Consulter l'annuaire des membres de l'association avec données publiques.
+ *       Consulter l'annuaire complet de l'association avec données publiques.
+ *       Inclut tous les membres de l'association : membres réguliers, secrétaire générale et président(e).
  *       Seuls les membres dont l'adhésion est validée peuvent accéder à cet annuaire.
  *       
  *       **Données affichées:**
@@ -197,6 +198,8 @@ router.get('/telecharger-formulaire', authentifierJWT, generalLimiter, membreCon
  *       - Téléphone et email
  *       - Profession
  *       - Statut d'adhésion
+ *       - Rôle dans l'association (Membre, Secrétaire Générale, Président(e))
+ *       - Informations d'adhésion
  *       
  *       **Sécurité:**
  *       - Accès limité aux membres approuvés avec formulaire soumis
@@ -283,11 +286,28 @@ router.get('/telecharger-formulaire', authentifierJWT, generalLimiter, membreCon
  *                           statut:
  *                             type: string
  *                             example: "APPROUVE"
+ *                           role:
+ *                             type: string
+ *                             enum: [MEMBRE, SECRETAIRE_GENERALE, PRESIDENT]
+ *                             example: "MEMBRE"
+ *                           role_libelle:
+ *                             type: string
+ *                             example: "Membre"
+ *                             description: "Libellé français du rôle"
+ *                           adhesion:
+ *                             type: object
+ *                             properties:
+ *                               a_soumis_formulaire:
+ *                                 type: boolean
+ *                                 example: true
+ *                               statut_adhesion:
+ *                                 type: string
+ *                                 example: "APPROUVE"
  *                     pagination:
  *                       $ref: '#/components/schemas/Pagination'
  *                     information:
  *                       type: string
- *                       example: "147 membres approuvés dans l'association"
+ *                       example: "147 membres de l'association (incluant les administrateurs)"
  *       403:
  *         description: Accès restreint - Seuls les membres approuvés peuvent consulter l'annuaire
  *         content:
@@ -376,5 +396,139 @@ router.get('/telecharger-carte', authentifierJWT, generalLimiter, membreControll
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/president-signature', authentifierJWT, verifierRole('SECRETAIRE_GENERALE', 'PRESIDENT'), generalLimiter, membreController.getPresidentSignature);
+
+/**
+ * @swagger
+ * /api/membre/profil:
+ *   put:
+ *     summary: Mettre à jour le profil du membre
+ *     description: Permet à un membre de mettre à jour ses informations personnelles
+ *     tags: [Member]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               telephone:
+ *                 type: string
+ *                 example: "+241066123456"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "nouveau@email.com"
+ *               adresse:
+ *                 type: string
+ *                 example: "Nouvelle adresse 123"
+ *               ville_residence:
+ *                 type: string
+ *                 example: "Libreville"
+ *               profession:
+ *                 type: string
+ *                 example: "Ingénieur Software"
+ *               employeur_ecole:
+ *                 type: string
+ *                 example: "TechCorp"
+ *               prenom_conjoint:
+ *                 type: string
+ *                 example: "Marie"
+ *               nom_conjoint:
+ *                 type: string
+ *                 example: "DUPONT"
+ *               nombre_enfants:
+ *                 type: integer
+ *                 example: 2
+ *     responses:
+ *       200:
+ *         description: Profil mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Profil mis à jour avec succès"
+ *                 profil:
+ *                   type: object
+ *                   properties:
+ *                     telephone:
+ *                       type: string
+ *                       example: "+241066123456"
+ *                     email:
+ *                       type: string
+ *                       example: "nouveau@email.com"
+ *                     adresse:
+ *                       type: string
+ *                       example: "Nouvelle adresse 123"
+ *       400:
+ *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Seuls les membres approuvés peuvent modifier leur profil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.put('/profil', authentifierJWT, generalLimiter, membreController.mettreAJourProfil);
+
+/**
+ * @swagger
+ * /api/membre/photo-profil:
+ *   put:
+ *     summary: Mettre à jour la photo de profil
+ *     description: Permet à un membre de mettre à jour sa photo de profil
+ *     tags: [Member]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - photo_profil_url
+ *             properties:
+ *               photo_profil_url:
+ *                 type: string
+ *                 format: uri
+ *                 example: "https://res.cloudinary.com/sgm/image/upload/v123456789/nouveau-profil.jpg"
+ *                 description: URL Cloudinary de la nouvelle photo de profil
+ *     responses:
+ *       200:
+ *         description: Photo de profil mise à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Photo de profil mise à jour avec succès"
+ *                 photo_profil_url:
+ *                   type: string
+ *                   example: "https://res.cloudinary.com/sgm/image/upload/v123456789/nouveau-profil.jpg"
+ *       400:
+ *         description: URL de photo invalide
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Seuls les membres approuvés peuvent modifier leur photo de profil
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.put('/photo-profil', authentifierJWT, generalLimiter, membreController.mettreAJourPhoto);
 
 module.exports = router;

@@ -281,14 +281,14 @@ class MembreController {
         ]
       } : {};
 
-      // Récupérer tous les membres approuvés (données publiques seulement)
+      // Récupérer tous les membres de l'association (données publiques seulement)
       const [membres, total] = await Promise.all([
         prisma.utilisateur.findMany({
           where: {
             AND: [
               { statut: 'APPROUVE' }, // Seulement les membres approuvés
               { est_actif: true }, // Seulement les comptes actifs
-              { role: 'MEMBRE' }, // Exclure les admins de l'annuaire public
+              { a_soumis_formulaire: true }, // Seulement ceux qui ont soumis leur formulaire
               conditionsRecherche
             ]
           },
@@ -302,11 +302,14 @@ class MembreController {
             telephone: true,
             email: true,
             statut: true,
+            role: true, // Inclure le rôle pour distinguer les admins
             ville_residence: true, // Peut être utile pour contact
-            profession: true // Information publique utile
+            profession: true, // Information publique utile
+            a_soumis_formulaire: true // Pour confirmer l'adhésion
             // PAS d'accès aux mots de passe, dates naissance, etc.
           },
           orderBy: [
+            { role: 'asc' }, // Admins en premier (PRESIDENT, SECRETAIRE_GENERALE, puis MEMBRE)
             { nom: 'asc' },
             { prenoms: 'asc' }
           ],
@@ -318,7 +321,7 @@ class MembreController {
             AND: [
               { statut: 'APPROUVE' },
               { est_actif: true },
-              { role: 'MEMBRE' },
+              { a_soumis_formulaire: true },
               conditionsRecherche
             ]
           }
@@ -361,7 +364,15 @@ class MembreController {
             email: membre.email || 'Non renseigné',
             ville_residence: membre.ville_residence || 'Non renseignée',
             profession: membre.profession || 'Non renseignée',
-            statut: membre.statut
+            statut: membre.statut,
+            role: membre.role,
+            role_libelle: membre.role === 'PRESIDENT' ? 'Président(e)' : 
+                         membre.role === 'SECRETAIRE_GENERALE' ? 'Secrétaire Générale' : 
+                         'Membre',
+            adhesion: {
+              a_soumis_formulaire: membre.a_soumis_formulaire,
+              statut_adhesion: membre.statut
+            }
           })),
           pagination: {
             page: parseInt(page),
@@ -369,7 +380,7 @@ class MembreController {
             total,
             pages_total: Math.ceil(total / limiteMax)
           },
-          information: `${total} membre${total > 1 ? 's' : ''} approuvé${total > 1 ? 's' : ''} dans l'association`
+          information: `${total} membre${total > 1 ? 's' : ''} de l'association (incluant les administrateurs)`
         }
       });
 
@@ -477,6 +488,218 @@ class MembreController {
       // Handle other errors normally
       const context = {
         operation: 'get_president_signature',
+        user_id: req.utilisateur?.id
+      };
+      return ErrorHandler.handleError(error, res, context);
+    }
+  }
+
+  /**
+   * Mettre à jour le profil du membre
+   */
+  async mettreAJourProfil(req, res) {
+    try {
+      const utilisateurId = req.utilisateur.id;
+      const {
+        telephone,
+        email,
+        adresse,
+        ville_residence,
+        profession,
+        employeur_ecole,
+        prenom_conjoint,
+        nom_conjoint,
+        nombre_enfants
+      } = req.body;
+
+      // Récupérer l'utilisateur actuel
+      const utilisateurActuel = await prisma.utilisateur.findUnique({
+        where: { id: utilisateurId }
+      });
+
+      if (!utilisateurActuel) {
+        const error = new Error('Utilisateur non trouvé');
+        error.status = 404;
+        throw error;
+      }
+
+      // Vérifier que l'utilisateur a le droit de modifier son profil
+      if (!utilisateurActuel.a_soumis_formulaire) {
+        const businessError = ErrorHandler.createBusinessError(
+          'Profil non modifiable',
+          'FORMULAIRE_NON_SOUMIS',
+          403,
+          [
+            'Vous devez d\'abord soumettre votre formulaire d\'adhésion',
+            'Contactez le secrétariat si vous avez des questions'
+          ]
+        );
+        const context = {
+          operation: 'update_member_profile',
+          user_id: utilisateurId
+        };
+        return ErrorHandler.formatBusinessError(businessError, res, context);
+      }
+
+      // Préparer les données à mettre à jour (seuls les champs fournis)
+      const donneesMAJ = {};
+      if (telephone !== undefined) donneesMAJ.telephone = telephone;
+      if (email !== undefined) donneesMAJ.email = email;
+      if (adresse !== undefined) donneesMAJ.adresse = adresse;
+      if (ville_residence !== undefined) donneesMAJ.ville_residence = ville_residence;
+      if (profession !== undefined) donneesMAJ.profession = profession;
+      if (employeur_ecole !== undefined) donneesMAJ.employeur_ecole = employeur_ecole;
+      if (prenom_conjoint !== undefined) donneesMAJ.prenom_conjoint = prenom_conjoint;
+      if (nom_conjoint !== undefined) donneesMAJ.nom_conjoint = nom_conjoint;
+      if (nombre_enfants !== undefined) donneesMAJ.nombre_enfants = nombre_enfants;
+      
+      // Ajouter les métadonnées de modification
+      donneesMAJ.modifie_le = new Date();
+
+      // Effectuer la mise à jour
+      const utilisateurMiseAJour = await prisma.utilisateur.update({
+        where: { id: utilisateurId },
+        data: donneesMAJ,
+        select: {
+          id: true,
+          telephone: true,
+          email: true,
+          adresse: true,
+          ville_residence: true,
+          profession: true,
+          employeur_ecole: true,
+          prenom_conjoint: true,
+          nom_conjoint: true,
+          nombre_enfants: true,
+          modifie_le: true
+        }
+      });
+
+      // Journal d'audit
+      await prisma.journalAudit.create({
+        data: {
+          id_utilisateur: utilisateurId,
+          action: 'MODIFICATION_PROFIL_MEMBRE',
+          details: {
+            champs_modifies: Object.keys(donneesMAJ).filter(key => key !== 'modifie_le'),
+            nom_utilisateur: utilisateurActuel.nom_utilisateur
+          },
+          adresse_ip: req.ip,
+          agent_utilisateur: req.get('User-Agent')
+        }
+      });
+
+      logger.info(`Modification profil par membre ${utilisateurActuel.nom_utilisateur}`, {
+        utilisateur_id: utilisateurId,
+        champs_modifies: Object.keys(donneesMAJ).filter(key => key !== 'modifie_le')
+      });
+
+      res.json({
+        message: 'Profil mis à jour avec succès',
+        profil: utilisateurMiseAJour
+      });
+
+    } catch (error) {
+      const context = {
+        operation: 'update_member_profile',
+        user_id: req.utilisateur?.id
+      };
+      return ErrorHandler.handleError(error, res, context);
+    }
+  }
+
+  /**
+   * Mettre à jour la photo de profil du membre
+   */
+  async mettreAJourPhoto(req, res) {
+    try {
+      const utilisateurId = req.utilisateur.id;
+      const { photo_profil_url } = req.body;
+
+      if (!photo_profil_url) {
+        const error = new Error('URL de la photo de profil requise');
+        error.status = 400;
+        throw error;
+      }
+
+      // Validation basique de l'URL Cloudinary
+      if (!photo_profil_url.includes('cloudinary.com')) {
+        const error = new Error('L\'URL doit être une URL Cloudinary valide');
+        error.status = 400;
+        throw error;
+      }
+
+      // Récupérer l'utilisateur actuel
+      const utilisateurActuel = await prisma.utilisateur.findUnique({
+        where: { id: utilisateurId }
+      });
+
+      if (!utilisateurActuel) {
+        const error = new Error('Utilisateur non trouvé');
+        error.status = 404;
+        throw error;
+      }
+
+      // Vérifier que l'utilisateur a le droit de modifier sa photo
+      if (!utilisateurActuel.a_soumis_formulaire) {
+        const businessError = ErrorHandler.createBusinessError(
+          'Photo de profil non modifiable',
+          'FORMULAIRE_NON_SOUMIS',
+          403,
+          [
+            'Vous devez d\'abord soumettre votre formulaire d\'adhésion',
+            'Contactez le secrétariat si vous avez des questions'
+          ]
+        );
+        const context = {
+          operation: 'update_member_photo',
+          user_id: utilisateurId
+        };
+        return ErrorHandler.formatBusinessError(businessError, res, context);
+      }
+
+      // Effectuer la mise à jour
+      const utilisateurMiseAJour = await prisma.utilisateur.update({
+        where: { id: utilisateurId },
+        data: {
+          photo_profil_url,
+          modifie_le: new Date()
+        },
+        select: {
+          id: true,
+          photo_profil_url: true,
+          modifie_le: true
+        }
+      });
+
+      // Journal d'audit
+      await prisma.journalAudit.create({
+        data: {
+          id_utilisateur: utilisateurId,
+          action: 'MODIFICATION_PHOTO_PROFIL_MEMBRE',
+          details: {
+            ancienne_photo: utilisateurActuel.photo_profil_url,
+            nouvelle_photo: photo_profil_url,
+            nom_utilisateur: utilisateurActuel.nom_utilisateur
+          },
+          adresse_ip: req.ip,
+          agent_utilisateur: req.get('User-Agent')
+        }
+      });
+
+      logger.info(`Modification photo profil par membre ${utilisateurActuel.nom_utilisateur}`, {
+        utilisateur_id: utilisateurId,
+        nouvelle_photo: photo_profil_url
+      });
+
+      res.json({
+        message: 'Photo de profil mise à jour avec succès',
+        photo_profil_url: utilisateurMiseAJour.photo_profil_url
+      });
+
+    } catch (error) {
+      const context = {
+        operation: 'update_member_photo',
         user_id: req.utilisateur?.id
       };
       return ErrorHandler.handleError(error, res, context);
