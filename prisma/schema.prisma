@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Better-Auth User model with SGM fields merged in
+model User {
+  id            String    @id @default(cuid())
+  name          String?   // Better-auth field (first + last name)
+  email         String    @unique // Better-auth field
+  emailVerified Boolean? // Better-auth field
+  image         String?   // Better-auth field (profile photo URL)
+  createdAt     DateTime  @default(now()) // Better-auth field
+  updatedAt     DateTime  @updatedAt // Better-auth field
+  
+  // SGM-specific fields (mapped to actual database columns)
+  membership_number      String?   @unique @map("numero_adhesion") // Auto-generated membership number
+  first_name             String?   @map("prenoms") // First name
+  last_name              String?   @map("nom") // Last name
+  profile_photo_url      String?   @map("photo_profil_url") // Profile photo URL
+  birth_date             DateTime? @map("date_naissance") // Date of birth
+  birth_place            String?   @map("lieu_naissance") // Place of birth
+  address                String?   @map("adresse") // Address
+  profession             String?   // Profession
+  city_residence         String?   @map("ville_residence") // City of residence
+  congo_entry_date       DateTime? @map("date_entree_congo") // Date of entry to Congo
+  employer_school        String?   @map("employeur_ecole") // Employer/University/School
+  phone                  String?   @map("telephone") // Phone number
+  consular_card_number   String?   @unique @map("numero_carte_consulaire") // Consular card number
+  id_issue_date          DateTime? @map("date_emission_piece") // ID issue date
+  selfie_photo_url       String?   // Selfie photo URL
+  signature_url          String?   @map("signature_url") // Signature URL
+  member_signature_url   String?   @map("signature_membre_url") // Member signature URL
+  comments               String?   @map("commentaire") // Optional comments
+  spouse_first_name      String?   @map("prenom_conjoint") // Spouse first name
+  spouse_last_name       String?   @map("nom_conjoint") // Spouse last name
+  children_count         Int?      @map("nombre_enfants") // Number of children
+  status                 Status    @default(PENDING) @map("statut") // Status enum
+  role                   Role      @default(MEMBER) // Role enum
+  form_code              String?   @unique @map("code_formulaire") // Form reference code
+  qr_code_url            String?   @map("url_qr_code") // QR code URL
+  card_issued_at         DateTime? @map("carte_emise_le") // Card issue date
+  rejection_reason       String?   @map("raison_rejet") // Rejection reason if status = REJECTED
+  rejected_at            DateTime? @map("rejete_le") // Rejection date
+  rejected_by            String?   @map("rejete_par") // ID of admin who rejected
+  username               String?   @unique @map("nom_utilisateur") // Username for better-auth
+  temporary_password     String?   @map("mot_passe_temporaire") // Temporary password
+  must_change_password   Boolean   @default(false) @map("doit_changer_mot_passe") // Must change password
+  changed_temp_password  Boolean   @default(false) @map("a_change_mot_passe_temporaire") // Changed temp password
+  has_paid               Boolean   @default(false) @map("a_paye") // Has paid
+  has_submitted_form     Boolean   @default(false) @map("a_soumis_formulaire") // True if submitted form
+  last_login             DateTime? @map("derniere_connexion") // Last login
+  is_active              Boolean   @default(true) @map("est_actif") // True if account active
+  deactivated_at         DateTime? @map("desactive_le") // Deactivation date
+  deactivated_by         String?   @map("desactive_par") // ID of admin who deactivated
+  deactivation_reason    String?   @map("raison_desactivation") // Deactivation reason
+
+  // Better-Auth relations
+  accounts Account[]
+  sessions Session[]
+  
+  // SGM Relations  
+  signatures             Signature[]
+  audit_logs             AuditLog[]
+  membership_forms       MembershipForm[]
+  recovery_tokens        RecoveryToken[]
+  official_documents     OfficialDocument[]
+  invitationsSent        Invitation[] @relation("InvitationsSent")
+
+  @@map("user")
+}
+
+model Signature {
+  id                 Int       @id @default(autoincrement())
+  president_id       String    // Changed to String to match User.id
+  signature_url      String
+  cloudinary_id      String    // For deleting from Cloudinary if needed
+  is_active          Boolean   @default(true)
+  uploaded_at        DateTime  @default(now())
+
+  user               User @relation(fields: [president_id], references: [id])
+}
+
+model AuditLog {
+  id              Int       @id @default(autoincrement())
+  user_id         String?   // Changed to String to match User.id
+  action          String    // MEMBERSHIP, APPROVE, REJECT, ASSIGN_CODE, etc.
+  details         Json?     // Additional details
+  ip_address      String?
+  user_agent      String?
+  created_at      DateTime  @default(now())
+
+  user            User? @relation(fields: [user_id], references: [id])
+}
+
+model MembershipForm {
+  id                   Int       @id @default(autoincrement())
+  user_id              String    // Changed to String to match User.id
+  version_number       Int       // Version 1, 2, 3, etc.
+  form_image_url       String    // URL of generated form image
+  data_snapshot        Json      // Snapshot of data used to generate this version
+  is_active_version    Boolean   @default(true) // Current version (only one active per user)
+  created_at           DateTime  @default(now())
+  
+  user                 User @relation(fields: [user_id], references: [id])
+  
+  @@unique([user_id, version_number])
+}
+
+model RecoveryToken {
+  id             Int       @id @default(autoincrement())
+  user_id        String    // Changed to String to match User.id
+  token          String    @unique
+  expires_at     DateTime
+  used           Boolean   @default(false)
+  created_at     DateTime  @default(now())
+  
+  user           User @relation(fields: [user_id], references: [id])
+}
+
+model OfficialDocument {
+  id                 Int       @id @default(autoincrement())
+  title              String    // Document title
+  description        String?   // Optional description
+  document_type      OfficialDocumentType // Document type
+  cloudinary_url     String    // PDF file URL on Cloudinary
+  cloudinary_id      String    // Cloudinary ID for management/deletion
+  file_size          Int?      // File size in bytes
+  original_filename  String    // Original file name
+  
+  // Upload information
+  uploaded_by        String    // Changed to String - ID of secretary who uploaded
+  uploaded_at        DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  
+  // Status and visibility
+  is_active          Boolean   @default(true) // True if visible to members
+  
+  // Relations
+  user               User @relation(fields: [uploaded_by], references: [id])
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Role {
+  MEMBER
+  ADMIN
+}
+
+enum OfficialDocumentType {
+  MEETING_MINUTES
+  REPORT
+  DECISION
+  INTERNAL_REGULATIONS
+}
+
+// Better-Auth Account model (matches better-auth expectations)
+model Account {
+  id                String  @id @default(cuid())
+  accountId         String  @unique
+  providerId        String
+  userId            String
+  accessToken       String? @map("access_token") @db.Text
+  refreshToken      String? @map("refresh_token") @db.Text
+  idToken           String? @map("id_token") @db.Text
+  accessTokenExpiresAt DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope             String?
+  password          String? @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@map("account")
+}
+
+// Better-Auth Session model (matches better-auth expectations)
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+// Invitation model for RBAC system
+model Invitation {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  role       Role     @default(MEMBER)
+  invitedBy  String   // ID of the admin who sent the invitation
+  expiresAt  DateTime
+  status     String   @default("pending") // pending, accepted, expired
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  inviter    User     @relation("InvitationsSent", fields: [invitedBy], references: [id])
+
+  @@map("invitation")
+}
+

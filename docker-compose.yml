@@ -1,0 +1,65 @@
+services:
+  app:
+    build: .
+    image: sgm-backend-better-auth:latest  # Unique image name for better-auth branch
+    ports:
+      - "3000:3000"  # Different port to avoid conflict with main branch
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://sgm_better_auth_user:sgm_better_auth_password@postgres:5432/sgm_better_auth_db
+      - BETTER_AUTH_SECRET=your-super-secret-better-auth-key-here
+      - BETTER_AUTH_URL=http://localhost:3000
+      - PORT=3000
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=agco.app@gmail.com
+      - SMTP_PASS=your-app-password-here
+      - FRONTEND_URL=http://localhost:3001
+      - CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+      - CLOUDINARY_API_KEY=your-cloudinary-api-key
+      - CLOUDINARY_API_SECRET=your-cloudinary-api-secret
+      - CSRF_SECRET=your-csrf-secret-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: sgm_better_auth_db
+      POSTGRES_USER: sgm_better_auth_user
+      POSTGRES_PASSWORD: sgm_better_auth_password
+    ports:
+      - "5432:5432"  # Different port to avoid conflict with main branch
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sgm_better_auth_user -d sgm_better_auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sgm-auth.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"  # Different port to avoid conflict with main branch
+    volumes:
+      - pgadmin_auth_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_auth_data:
+  pgadmin_auth_data:
