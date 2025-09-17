@@ -2086,7 +2086,10 @@ class ControleurSecretaire {
               statut: true,
               photo_profil_url: true,
               selfie_photo_url: true,
-              signature_url: true
+              signature_url: true,
+              raison_rejet: true,
+              rejete_le: true,
+              rejete_par: true
             }
           }
         },
@@ -2131,6 +2134,9 @@ class ControleurSecretaire {
               signature_url: formulaire.utilisateur.signature_url
             },
             statut: formulaire.utilisateur.statut,
+            raison_rejet: formulaire.utilisateur.raison_rejet,
+            rejete_le: formulaire.utilisateur.rejete_le,
+            rejete_par: formulaire.utilisateur.rejete_par,
             date_soumission: formulaire.cree_le,
             derniere_mise_a_jour: formulaire.modifie_le,
             url_fiche_formulaire: formulaire.url_image_formulaire,
