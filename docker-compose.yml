@@ -34,6 +34,21 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sgm-gabon.org
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stopped
+
   # Test database for development
   postgres-test:
     image: postgres:15-alpine
@@ -48,3 +63,4 @@ services:
 
 volumes:
   postgres_data:
+  pgadmin_data:
